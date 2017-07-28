@@ -5,12 +5,12 @@ plugins {
 golang {
     packagePath = 'github.com/robertfmurdock/SquadManager'
 }
+
 dependencies {
     golang {
-    }
-}
-dependencies {
-    golang {
+        build "github.com/julienschmidt/httprouter"
+        build "gopkg.in/mgo.v2"
+
         test name:'github.com/stretchr/testify'
     }
 }
