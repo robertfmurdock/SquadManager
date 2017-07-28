@@ -1,19 +1,24 @@
-package service
+package service_test
 
 import (
 	"net/http"
 	"testing"
 	"net/http/httptest"
 	"github.com/stretchr/testify/assert"
+	"github.com/robertfmurdock/SquadManager/SquadManagerService/service"
 	"encoding/json"
 	"io"
+)
+
+var (
+	mainHandler = service.MakeMainHandler()
 )
 
 func TestNoResponseOnMainUrl(t *testing.T) {
 	request := newRequest(t, "GET", "/", nil)
 	recorder := httptest.NewRecorder()
 
-	http.HandlerFunc(MainHandler).ServeHTTP(recorder, request)
+	mainHandler.ServeHTTP(recorder, request)
 
 	assert.Equal(t, recorder.Code, 404)
 }
@@ -30,7 +35,7 @@ func TestCallGetSquad(t *testing.T) {
 	request := newRequest(t, "GET", "/squad", nil)
 	recorder := httptest.NewRecorder()
 
-	http.HandlerFunc(MainHandler).ServeHTTP(recorder, request)
+	mainHandler.ServeHTTP(recorder, request)
 
 	assert.Equal(t, recorder.Code, 200)
 

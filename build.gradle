@@ -3,9 +3,14 @@ plugins {
 }
 
 golang {
-    packagePath = 'github.com/robertfmurdock/SquadManager/SquadManagerService'
+    packagePath = 'github.com/robertfmurdock/SquadManager'
 }
 dependencies {
     golang {
+    }
+}
+dependencies {
+    golang {
+        test name:'github.com/stretchr/testify'
     }
 }

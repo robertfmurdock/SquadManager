@@ -5,7 +5,11 @@ import (
 	"encoding/json"
 )
 
-func MainHandler(writer http.ResponseWriter, request *http.Request) {
+func MakeMainHandler() http.Handler {
+	return http.HandlerFunc(mainHandler)
+}
+
+func mainHandler(writer http.ResponseWriter, request *http.Request) {
 
 	mux := http.NewServeMux()
 
@@ -13,7 +17,6 @@ func MainHandler(writer http.ResponseWriter, request *http.Request) {
 
 	mux.ServeHTTP(writer, request)
 }
-
 
 func SquadListHandler(writer http.ResponseWriter, _ *http.Request) {
 
