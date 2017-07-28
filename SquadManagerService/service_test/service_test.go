@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	config = service.ServiceConfiguration{
+	config = service.Configuration{
 		DatabaseName:"SquadManagerTestDB",
 		Host:"localhost",
 	}

@@ -10,21 +10,21 @@ type SquadService struct {
 	Repository *SquadRepository
 }
 
-func NewSquadService(config ServiceConfiguration) (*SquadService, error) {
-	repository, err := NewSquadRepository(config)
-	if (err != nil) {
+func newSquadService(config Configuration) (*SquadService, error) {
+	repository, err := newSquadRepository(config)
+	if err != nil {
 		return nil, err
 	}
 
-	service := SquadService{repository}
+	squadService := SquadService{repository}
 
-	return &service, nil
+	return &squadService, nil
 }
 
 func (self SquadService) listSquads(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 
 	squads, err := self.Repository.listSquads()
-	if (err != nil) {
+	if err != nil {
 		writer.WriteHeader(500)
 		return
 	}
@@ -35,7 +35,7 @@ func (self SquadService) listSquads(writer http.ResponseWriter, _ *http.Request,
 func (self SquadService) createSquad(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 
 	squadId, err := self.Repository.addSquad()
-	if (err != nil) {
+	if err != nil {
 		writer.WriteHeader(500)
 		return
 	}

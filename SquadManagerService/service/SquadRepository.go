@@ -6,11 +6,11 @@ import (
 )
 
 type SquadRepository struct {
-	Config  ServiceConfiguration
+	Config  Configuration
 	session *mgo.Session
 }
 
-func NewSquadRepository(config ServiceConfiguration) (*SquadRepository, error) {
+func newSquadRepository(config Configuration) (*SquadRepository, error) {
 	session, err := mgo.Dial("mongo,localhost")
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (self SquadRepository) findSquadDocuments(query interface{}) ([]SquadDocume
 func (self SquadRepository) listSquads() ([]string, error) {
 	squadDocuments, err := self.findSquadDocuments(bson.M{})
 
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 

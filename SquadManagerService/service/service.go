@@ -5,16 +5,16 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-type ServiceConfiguration struct {
+type Configuration struct {
 	DatabaseName string
 	Host         string
 }
 
-func MakeMainHandler(config ServiceConfiguration) http.Handler {
+func MakeMainHandler(config Configuration) http.Handler {
 
-	repository, err := NewSquadService(config)
+	repository, err := newSquadService(config)
 
-	if (err != nil) {
+	if err != nil {
 		panic(err)
 	}
 
