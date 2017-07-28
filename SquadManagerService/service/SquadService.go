@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/julienschmidt/httprouter"
+	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"encoding/json"
 	"net/http"
 )
@@ -44,3 +45,32 @@ func (self SquadService) createSquad(writer http.ResponseWriter, _ *http.Request
 	json.NewEncoder(writer).Encode(squadId)
 }
 
+func (self SquadService) getSquad(writer http.ResponseWriter, _ *http.Request, params httprouter.Params) {
+
+	id := params.ByName("id")
+	squad, err := self.Repository.getSquad(id)
+	if err != nil {
+		writer.WriteHeader(500)
+	}
+
+	json.NewEncoder(writer).Encode(squad)
+}
+
+func (self SquadService) postSquadMember(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	squadId := params.ByName("id")
+	var squadMember api.SquadMember
+
+	if json.NewDecoder(request.Body).Decode(&squadMember) != nil {
+		writer.WriteHeader(500)
+		return
+	}
+
+	err := self.Repository.postSquadMember(squadMember, squadId)
+	if err != nil {
+		writer.WriteHeader(500)
+		return
+	}
+
+	writer.WriteHeader(202)
+	json.NewEncoder(writer).Encode(squadMember.ID)
+}

@@ -22,6 +22,9 @@ func MakeMainHandler(config Configuration) http.Handler {
 
 	router.GET("/squad", repository.listSquads)
 	router.POST("/squad", repository.createSquad)
+	router.GET("/squad/:id", repository.getSquad)
+	router.POST("/squad/:id", repository.postSquadMember)
+
 
 	return http.HandlerFunc(router.ServeHTTP)
 }
