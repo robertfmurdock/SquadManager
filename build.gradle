@@ -1,0 +1,11 @@
+plugins {
+    id 'com.github.blindpirate.gogradle' version '0.6.5'
+}
+
+golang {
+    packagePath = 'github.com/robertfmurdock/SquadManager/SquadManagerService'
+}
+dependencies {
+    golang {
+    }
+}
