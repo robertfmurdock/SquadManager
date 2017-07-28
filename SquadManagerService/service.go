@@ -7,8 +7,17 @@ import (
 
 func MainHandler(writer http.ResponseWriter, request *http.Request) {
 
-	squads := []string{}
+	mux := http.NewServeMux()
 
+	mux.HandleFunc("/squad", SquadListHandler)
+
+	mux.ServeHTTP(writer, request)
+}
+
+
+func SquadListHandler(writer http.ResponseWriter, _ *http.Request) {
+
+	squads := []string{}
 	json.NewEncoder(writer).Encode(squads)
 }
 
