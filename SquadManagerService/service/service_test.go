@@ -8,6 +8,7 @@ import (
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/testutility"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 var (
@@ -54,8 +55,12 @@ func TestPOSTSquadMemberWillShowSquadMemberInSubsequentGET(t *testing.T) {
 	wrapper := testutility.Wrap(t, mainHandler)
 	newSquadId := wrapper.PerformPostSquadAndGetId()
 
+	now := time.Now().Truncate(24 * time.Hour)
+	later := now.AddDate(1, 0, 0)
+
 	member := api.SquadMember{
 		ID:    bson.NewObjectId().Hex(),
+		Range: api.Range{Begin: now, End: later},
 		Email: "fakeemail@fake.com",
 	}
 	memberId := wrapper.PerformPostSquadMember(newSquadId, member)

@@ -62,6 +62,7 @@ func toApiSquadMemberList(documents []SquadMemberDocument) []api.SquadMember {
 func toApiSquadMember(document SquadMemberDocument) api.SquadMember {
 	return api.SquadMember{
 		ID:    document.ID.Hex(),
+		Range: document.Range,
 		Email: document.Email,
 	}
 }
@@ -75,6 +76,7 @@ func toSquadMemberDocument(squadMember api.SquadMember, squadId bson.ObjectId) S
 	return SquadMemberDocument{
 		ID:      bson.ObjectIdHex(squadMember.ID),
 		Email:   squadMember.Email,
+		Range:   squadMember.Range,
 		SquadID: squadId,
 	}
 }
@@ -111,5 +113,6 @@ type SquadDocument struct {
 type SquadMemberDocument struct {
 	ID      bson.ObjectId `bson:"_id,omitempty"`
 	SquadID bson.ObjectId `bson:"squadId"`
+	Range   api.Range `bson:"range"`
 	Email   string `bson:"email"`
 }
