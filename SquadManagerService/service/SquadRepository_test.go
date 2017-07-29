@@ -2,14 +2,16 @@ package service
 
 import (
 	"testing"
-	"github.com/stretchr/testify/assert"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRepositoryFactoryWillCopySession(t *testing.T) {
+
 	factory := SquadRepositoryFactory{
 		Config: Configuration{
-			Host:         "127.0.0.1",
+			Host:         "0.0.0.0",
 			DatabaseName: "SquadRepositoryTest",
 			DbTimeout:    time.Second / 100,
 		}, parentSession: nil,
