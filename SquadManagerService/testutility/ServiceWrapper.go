@@ -1,18 +1,18 @@
 package testutility
 
 import (
-	"encoding/json"
-	"net/http/httptest"
-	"github.com/stretchr/testify/assert"
-	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
-	"testing"
-	"net/http"
-	"io"
 	"bytes"
+	"encoding/json"
+	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
+	"github.com/stretchr/testify/assert"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 type ServiceWrapper struct {
-	t *testing.T
+	t       *testing.T
 	Handler http.Handler
 }
 

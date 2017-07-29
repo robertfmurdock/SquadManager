@@ -1,21 +1,23 @@
 package service_test
 
 import (
-	"testing"
 	"net/http/httptest"
-	"github.com/stretchr/testify/assert"
-	"github.com/robertfmurdock/SquadManager/SquadManagerService/service"
-	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
-	"github.com/robertfmurdock/SquadManager/SquadManagerService/testutility"
-	"gopkg.in/mgo.v2/bson"
+	"testing"
 	"time"
+
+	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
+	"github.com/robertfmurdock/SquadManager/SquadManagerService/service"
+	"github.com/robertfmurdock/SquadManager/SquadManagerService/testutility"
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/mgo.v2/bson"
+	"net/http"
 )
 
 var (
 	config = service.Configuration{
 		DatabaseName: "SquadManagerTestDB",
 		Host:         "localhost",
-		DbTimeout: time.Second / 100,
+		DbTimeout:    time.Second / 100,
 	}
 	mainHandler = service.MakeMainHandler(config)
 )
@@ -29,11 +31,11 @@ func TestNoResponseOnMainUrl(t *testing.T) {
 	assert.Equal(t, recorder.Code, 404)
 }
 
-func TestWillErrorWhenDatasourceNotAvailable( t *testing.T) {
+func TestWillErrorWhenDatasourceNotAvailable(t *testing.T) {
 	config = service.Configuration{
 		DatabaseName: "SquadManagerTestDB",
 		Host:         "missing",
-		DbTimeout: time.Millisecond / 100,
+		DbTimeout:    time.Millisecond / 100,
 	}
 	handler := service.MakeMainHandler(config)
 
@@ -68,6 +70,18 @@ func TestGETSquadWithNewSquadWillHaveNoMembers(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedSquad, squad)
+}
+
+func TestGETSquadWithUnknownSquadIdWillReturn404(t *testing.T) {
+	wrapper := testutility.Wrap(t, mainHandler)
+
+	squadId := bson.NewObjectId().Hex()
+
+	request := testutility.NewRequest(t, "GET", "/squad/"+squadId, nil)
+
+	recorder := wrapper.PerformRequest(request)
+
+	assert.Equal(t, http.StatusNotFound, recorder.Code)
 }
 
 func TestPOSTSquadMemberWillShowSquadMemberInSubsequentGET(t *testing.T) {

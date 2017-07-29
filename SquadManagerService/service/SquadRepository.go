@@ -1,9 +1,9 @@
 package service
 
 import (
+	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 )
 
 type SquadRepositoryFactory struct {
@@ -62,19 +62,35 @@ func (self SquadRepository) addSquad() (bson.ObjectId, error) {
 	return id, collection.Insert(SquadDocument{id})
 }
 
-func (self *SquadRepository) getSquad(id string) (*api.Squad, error) {
-	collection := self.SquadMemberCollection()
+func (self *SquadRepository) getSquad(idString string) (*api.Squad, error) {
 
-	squadDocument := []SquadMemberDocument{}
-	err := collection.Find(bson.M{"squadId": bson.ObjectIdHex(id)}).All(&squadDocument)
+	squadId := bson.ObjectIdHex(idString)
+
+	squadCollection := self.SquadCollection()
+	var squadDocuments []SquadDocument
+
+	if err := squadCollection.FindId(squadId).All(&squadDocuments); err != nil {
+		return nil, err
+	}
+
+	if len(squadDocuments) == 0 {
+		return nil, nil
+	}
+
+	squadMemberCollection := self.SquadMemberCollection()
+
+	squadMemberDocuments := []SquadMemberDocument{}
+
+	err := squadMemberCollection.Find(bson.M{"squadId": squadId}).All(&squadMemberDocuments)
 	if err != nil {
 		return nil, err
 	}
 	return &api.Squad{
-		ID:      id,
-		Members: toApiSquadMemberList(squadDocument),
+		ID:      idString,
+		Members: toApiSquadMemberList(squadMemberDocuments),
 	}, nil
 }
+
 func toApiSquadMemberList(documents []SquadMemberDocument) []api.SquadMember {
 	idList := make([]api.SquadMember, len(documents))
 	for index, document := range documents {
@@ -91,7 +107,7 @@ func toApiSquadMember(document SquadMemberDocument) api.SquadMember {
 	}
 }
 
-func (self SquadRepository) postSquadMember(squadMember api.SquadMember, squadId string) (error) {
+func (self SquadRepository) postSquadMember(squadMember api.SquadMember, squadId string) error {
 	collection := self.SquadMemberCollection()
 	return collection.Insert(toSquadMemberDocument(squadMember, bson.ObjectIdHex(squadId)))
 }
@@ -138,6 +154,6 @@ type SquadDocument struct {
 type SquadMemberDocument struct {
 	ID      bson.ObjectId `bson:"_id,omitempty"`
 	SquadID bson.ObjectId `bson:"squadId"`
-	Range   api.Range `bson:"range"`
-	Email   string `bson:"email"`
+	Range   api.Range     `bson:"range"`
+	Email   string        `bson:"email"`
 }

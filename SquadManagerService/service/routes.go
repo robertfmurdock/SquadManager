@@ -2,8 +2,9 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"net/http"
+
+	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 )
 
 func listSquads(repository *SquadRepository) (ResponseEntity, error) {
@@ -18,7 +19,15 @@ func createSquad(repository *SquadRepository) (ResponseEntity, error) {
 
 func getSquad(_ *http.Request, repository *SquadRepository, squadId string) (ResponseEntity, error) {
 	squad, err := repository.getSquad(squadId)
-	return ResponseEntity{squad, http.StatusOK}, err
+	if err != nil {
+		return ResponseEntity{}, err
+	}
+
+	if squad == nil {
+		return ResponseEntity{code: http.StatusNotFound}, nil
+	}
+
+	return ResponseEntity{squad, http.StatusOK}, nil
 }
 
 func postSquadMember(request *http.Request, repository *SquadRepository, squadId string) (ResponseEntity, error) {
