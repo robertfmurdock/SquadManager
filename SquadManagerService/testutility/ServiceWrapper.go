@@ -60,7 +60,7 @@ func (self ServiceWrapper) PerformPostSquadAndGetId() string {
 func (self ServiceWrapper) PerformGetSquad(squadId string) api.Squad {
 	request := NewRequest(self.t, "GET", "/squad/"+squadId, nil)
 
-	recorder := self.getResponse(request)
+	recorder := self.PerformRequest(request)
 
 	assert.Equal(self.t, recorder.Code, 200)
 
@@ -77,7 +77,7 @@ func (self ServiceWrapper) PerformGetSquad(squadId string) api.Squad {
 func (self ServiceWrapper) PerformPostSquadMember(squadId string, squadMember api.SquadMember) string {
 	request := MakePostRequest(self.t, "/squad/"+squadId, squadMember)
 
-	response := self.getResponse(request)
+	response := self.PerformRequest(request)
 
 	assert.Equal(self.t, http.StatusAccepted, response.Code)
 	var newSquadMemberId string
@@ -89,21 +89,21 @@ func (self ServiceWrapper) PerformPostSquadMember(squadId string, squadMember ap
 func (self ServiceWrapper) PerformPostSquad(t *testing.T) *httptest.ResponseRecorder {
 	request := MakePostRequest(t, "/squad", "")
 
-	return self.getResponse(request)
+	return self.PerformRequest(request)
 }
 
-func (self ServiceWrapper) getResponse(request *http.Request) *httptest.ResponseRecorder {
+func (self ServiceWrapper) PerformRequest(request *http.Request) *httptest.ResponseRecorder {
 	recorder := httptest.NewRecorder()
 	self.Handler.ServeHTTP(recorder, request)
 	return recorder
 }
 
-func (self ServiceWrapper) PerformGetSquadList(t *testing.T) []string {
-	request := NewRequest(t, "GET", "/squad", nil)
+func (self ServiceWrapper) PerformGetSquadList() []string {
+	request := NewRequest(self.t, "GET", "/squad", nil)
 
-	recorder := self.getResponse(request)
+	recorder := self.PerformRequest(request)
 
-	assert.Equal(t, recorder.Code, 200)
+	assert.Equal(self.t, recorder.Code, 200)
 
 	var loadedJson []string
 	json.Unmarshal(recorder.Body.Bytes(), &loadedJson)

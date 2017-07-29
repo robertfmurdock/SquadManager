@@ -6,18 +6,41 @@ import (
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 )
 
+type SquadRepositoryFactory struct {
+	Config        Configuration
+	parentSession *mgo.Session
+}
+
+func (self SquadRepositoryFactory) Close() {
+	if self.parentSession != nil {
+		self.parentSession.Close()
+	}
+}
+
+func (self *SquadRepositoryFactory) Repository() (*SquadRepository, error) {
+	if self.parentSession == nil {
+		if err := self.initParentSession(); err != nil {
+			return nil, err
+		}
+	}
+
+	repository := SquadRepository{Config: self.Config, session: self.parentSession.Copy()}
+	return &repository, nil
+}
+
+func (self *SquadRepositoryFactory) initParentSession() error {
+	session, err := mgo.DialWithTimeout(self.Config.Host, self.Config.DbTimeout)
+	self.parentSession = session
+	return err
+}
+
 type SquadRepository struct {
 	Config  Configuration
 	session *mgo.Session
 }
 
-func newSquadRepository(config Configuration) (*SquadRepository, error) {
-	session, err := mgo.Dial("mongo,localhost")
-	if err != nil {
-		return nil, err
-	}
-
-	return &SquadRepository{config, session}, nil
+func (self SquadRepository) Close() {
+	self.session.Close()
 }
 
 func (self SquadRepository) Database() *mgo.Database {
@@ -33,8 +56,9 @@ func (self SquadRepository) SquadMemberCollection() *mgo.Collection {
 }
 
 func (self SquadRepository) addSquad() (bson.ObjectId, error) {
-	collection := self.SquadCollection()
 	id := bson.NewObjectId()
+
+	collection := self.SquadCollection()
 	return id, collection.Insert(SquadDocument{id})
 }
 
@@ -89,6 +113,7 @@ func (self SquadRepository) findSquadDocuments(query interface{}) ([]SquadDocume
 }
 
 func (self SquadRepository) listSquads() ([]string, error) {
+
 	squadDocuments, err := self.findSquadDocuments(bson.M{})
 
 	if err != nil {

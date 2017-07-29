@@ -8,23 +8,30 @@ import (
 )
 
 type SquadService struct {
-	Repository *SquadRepository
+	RepositoryFactory *SquadRepositoryFactory
+}
+
+func (self SquadService) Close() {
+	self.RepositoryFactory.Close()
 }
 
 func newSquadService(config Configuration) (*SquadService, error) {
-	repository, err := newSquadRepository(config)
-	if err != nil {
-		return nil, err
-	}
+	repositoryFactory := SquadRepositoryFactory{config, nil}
 
-	squadService := SquadService{repository}
+	squadService := SquadService{&repositoryFactory}
 
 	return &squadService, nil
 }
 
 func (self SquadService) listSquads(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+	repository, err := self.RepositoryFactory.Repository()
+	if err != nil {
+		writer.WriteHeader(500)
+		return
+	}
+	defer repository.Close()
 
-	squads, err := self.Repository.listSquads()
+	squads, err := repository.listSquads()
 	if err != nil {
 		writer.WriteHeader(500)
 		return
@@ -34,8 +41,9 @@ func (self SquadService) listSquads(writer http.ResponseWriter, _ *http.Request,
 }
 
 func (self SquadService) createSquad(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-
-	squadId, err := self.Repository.addSquad()
+	repository, err := self.RepositoryFactory.Repository()
+	defer repository.Close()
+	squadId, err := repository.addSquad()
 	if err != nil {
 		writer.WriteHeader(500)
 		return
@@ -46,9 +54,10 @@ func (self SquadService) createSquad(writer http.ResponseWriter, _ *http.Request
 }
 
 func (self SquadService) getSquad(writer http.ResponseWriter, _ *http.Request, params httprouter.Params) {
-
+	repository, err := self.RepositoryFactory.Repository()
+	defer repository.Close()
 	id := params.ByName("id")
-	squad, err := self.Repository.getSquad(id)
+	squad, err := repository.getSquad(id)
 	if err != nil {
 		writer.WriteHeader(500)
 	}
@@ -64,9 +73,9 @@ func (self SquadService) postSquadMember(writer http.ResponseWriter, request *ht
 		writer.WriteHeader(500)
 		return
 	}
+	repository, _ := self.RepositoryFactory.Repository()
 
-	err := self.Repository.postSquadMember(squadMember, squadId)
-	if err != nil {
+	if err := repository.postSquadMember(squadMember, squadId); err != nil {
 		writer.WriteHeader(500)
 		return
 	}

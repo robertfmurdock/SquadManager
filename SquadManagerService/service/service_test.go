@@ -15,6 +15,7 @@ var (
 	config = service.Configuration{
 		DatabaseName: "SquadManagerTestDB",
 		Host:         "localhost",
+		DbTimeout: time.Second / 100,
 	}
 	mainHandler = service.MakeMainHandler(config)
 )
@@ -28,11 +29,29 @@ func TestNoResponseOnMainUrl(t *testing.T) {
 	assert.Equal(t, recorder.Code, 404)
 }
 
+func TestWillErrorWhenDatasourceNotAvailable( t *testing.T) {
+	config = service.Configuration{
+		DatabaseName: "SquadManagerTestDB",
+		Host:         "missing",
+		DbTimeout: time.Millisecond / 100,
+	}
+	handler := service.MakeMainHandler(config)
+
+	wrapper := testutility.Wrap(t, handler)
+
+	request := testutility.NewRequest(t, "GET", "/squad", nil)
+
+	response := wrapper.PerformRequest(request)
+
+	assert.Equal(t, response.Code, 500)
+
+}
+
 func TestPOSTSquadWillIncludeNewSquadInSubsequentGET(t *testing.T) {
 	wrapper := testutility.Wrap(t, mainHandler)
 
 	newSquadId := wrapper.PerformPostSquadAndGetId()
-	squadList := wrapper.PerformGetSquadList(t)
+	squadList := wrapper.PerformGetSquadList()
 
 	assert.Contains(t, squadList, newSquadId)
 }
