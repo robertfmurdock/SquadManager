@@ -11,26 +11,26 @@ type SquadRepositoryFactory struct {
 	parentSession *mgo.Session
 }
 
-func (self SquadRepositoryFactory) Close() {
-	if self.parentSession != nil {
-		self.parentSession.Close()
+func (factory SquadRepositoryFactory) Close() {
+	if factory.parentSession != nil {
+		factory.parentSession.Close()
 	}
 }
 
-func (self *SquadRepositoryFactory) Repository() (*SquadRepository, error) {
-	if self.parentSession == nil {
-		if err := self.initParentSession(); err != nil {
+func (factory *SquadRepositoryFactory) Repository() (*SquadRepository, error) {
+	if factory.parentSession == nil {
+		if err := factory.initParentSession(); err != nil {
 			return nil, err
 		}
 	}
 
-	repository := SquadRepository{Config: self.Config, session: self.parentSession.Copy()}
+	repository := SquadRepository{Config: factory.Config, session: factory.parentSession.Copy()}
 	return &repository, nil
 }
 
-func (self *SquadRepositoryFactory) initParentSession() error {
-	session, err := mgo.DialWithTimeout(self.Config.Host, self.Config.DbTimeout)
-	self.parentSession = session
+func (factory *SquadRepositoryFactory) initParentSession() error {
+	session, err := mgo.DialWithTimeout(factory.Config.Host, factory.Config.DbTimeout)
+	factory.parentSession = session
 	return err
 }
 
@@ -39,34 +39,38 @@ type SquadRepository struct {
 	session *mgo.Session
 }
 
-func (self SquadRepository) Close() {
-	self.session.Close()
+func (repository SquadRepository) Close() {
+	repository.session.Close()
 }
 
-func (self SquadRepository) Database() *mgo.Database {
-	return self.session.DB(self.Config.DatabaseName)
+func (repository SquadRepository) Database() *mgo.Database {
+	return repository.session.DB(repository.Config.DatabaseName)
 }
 
-func (self SquadRepository) SquadCollection() *mgo.Collection {
-	return self.Database().C("squad")
+func (repository SquadRepository) SquadCollection() *mgo.Collection {
+	return repository.Database().C("squad")
 }
 
-func (self SquadRepository) SquadMemberCollection() *mgo.Collection {
-	return self.Database().C("squadMember")
+func (repository SquadRepository) SquadMemberCollection() *mgo.Collection {
+	return repository.Database().C("squadMember")
 }
 
-func (self SquadRepository) addSquad() (bson.ObjectId, error) {
+func (repository SquadRepository) addSquad() (bson.ObjectId, error) {
 	id := bson.NewObjectId()
 
-	collection := self.SquadCollection()
+	collection := repository.SquadCollection()
 	return id, collection.Insert(SquadDocument{id})
 }
 
-func (self *SquadRepository) getSquad(idString string) (*api.Squad, error) {
+func (repository *SquadRepository) getSquad(idString string) (*api.Squad, error) {
+
+	if !bson.IsObjectIdHex(idString) {
+		return nil, nil
+	}
 
 	squadId := bson.ObjectIdHex(idString)
 
-	squadCollection := self.SquadCollection()
+	squadCollection := repository.SquadCollection()
 	var squadDocuments []SquadDocument
 
 	if err := squadCollection.FindId(squadId).All(&squadDocuments); err != nil {
@@ -77,7 +81,7 @@ func (self *SquadRepository) getSquad(idString string) (*api.Squad, error) {
 		return nil, nil
 	}
 
-	squadMemberCollection := self.SquadMemberCollection()
+	squadMemberCollection := repository.SquadMemberCollection()
 
 	squadMemberDocuments := []SquadMemberDocument{}
 
@@ -107,8 +111,8 @@ func toApiSquadMember(document SquadMemberDocument) api.SquadMember {
 	}
 }
 
-func (self SquadRepository) postSquadMember(squadMember api.SquadMember, squadId string) error {
-	collection := self.SquadMemberCollection()
+func (repository SquadRepository) postSquadMember(squadMember api.SquadMember, squadId string) error {
+	collection := repository.SquadMemberCollection()
 	return collection.Insert(toSquadMemberDocument(squadMember, bson.ObjectIdHex(squadId)))
 }
 
@@ -121,16 +125,16 @@ func toSquadMemberDocument(squadMember api.SquadMember, squadId bson.ObjectId) S
 	}
 }
 
-func (self SquadRepository) findSquadDocuments(query interface{}) ([]SquadDocument, error) {
-	collection := self.SquadCollection()
+func (repository SquadRepository) findSquadDocuments(query interface{}) ([]SquadDocument, error) {
+	collection := repository.SquadCollection()
 	var squadDocuments []SquadDocument
 	err := collection.Find(query).All(&squadDocuments)
 	return squadDocuments, err
 }
 
-func (self SquadRepository) listSquads() ([]string, error) {
+func (repository SquadRepository) listSquads() ([]string, error) {
 
-	squadDocuments, err := self.findSquadDocuments(bson.M{})
+	squadDocuments, err := repository.findSquadDocuments(bson.M{})
 
 	if err != nil {
 		return nil, err

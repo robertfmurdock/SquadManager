@@ -37,6 +37,10 @@ func postSquadMember(request *http.Request, repository *SquadRepository, squadId
 		return ResponseEntity{}, err
 	}
 
+	if squad, err := repository.getSquad(squadId); err != nil || squad == nil {
+		return ResponseEntity{code: http.StatusNotFound}, err
+	}
+
 	err := repository.postSquadMember(squadMember, squadId)
 	return ResponseEntity{squadMember.ID, http.StatusAccepted}, err
 }

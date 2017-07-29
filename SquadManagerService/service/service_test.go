@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"net/http"
+
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/service"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/testutility"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2/bson"
-	"net/http"
 )
 
 var (
@@ -84,6 +85,18 @@ func TestGETSquadWithUnknownSquadIdWillReturn404(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, recorder.Code)
 }
 
+func TestGETSquadWithInvalidSquadIdWillReturn404(t *testing.T) {
+	wrapper := testutility.Wrap(t, mainHandler)
+
+	squadId := "This is not a valid object id"
+
+	request := testutility.NewRequest(t, "GET", "/squad/"+squadId, nil)
+
+	recorder := wrapper.PerformRequest(request)
+
+	assert.Equal(t, http.StatusNotFound, recorder.Code)
+}
+
 func TestPOSTSquadMemberWillShowSquadMemberInSubsequentGET(t *testing.T) {
 	wrapper := testutility.Wrap(t, mainHandler)
 	newSquadId := wrapper.PerformPostSquadAndGetId()
@@ -103,4 +116,24 @@ func TestPOSTSquadMemberWillShowSquadMemberInSubsequentGET(t *testing.T) {
 	squad := wrapper.PerformGetSquad(newSquadId)
 
 	assert.Contains(t, squad.Members, member)
+}
+
+func TestPOSTSquadMemberWill404(t *testing.T) {
+	wrapper := testutility.Wrap(t, mainHandler)
+
+	now := time.Now().Truncate(24 * time.Hour)
+	later := now.AddDate(1, 0, 0)
+
+	member := api.SquadMember{
+		ID:    bson.NewObjectId().Hex(),
+		Range: api.Range{Begin: now, End: later},
+		Email: "fakeemail@fake.com",
+	}
+	squadId := bson.NewObjectId().Hex()
+
+	request := testutility.MakePostRequest(t, "/squad/"+squadId, member)
+
+	response := wrapper.PerformRequest(request)
+
+	assert.Equal(t, http.StatusNotFound, response.Code)
 }
