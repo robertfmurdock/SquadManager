@@ -14,18 +14,19 @@ type Configuration struct {
 
 func MakeMainHandler(config Configuration) http.Handler {
 
-	repository, err := newSquadService(config)
+	context, err := newContext(config)
 	if err != nil {
 		panic(err)
 	}
-	defer repository.Close()
+	defer context.Close()
 
 	router := httprouter.New()
 
-	router.GET("/squad", repository.listSquads)
-	router.POST("/squad", repository.createSquad)
-	router.GET("/squad/:id", repository.getSquad)
-	router.POST("/squad/:id", repository.postSquadMember)
+	router.GET("/squad", context.with(Handler(listSquads)))
+	router.POST("/squad", context.with(Handler(createSquad)))
+	router.GET("/squad/:id", context.with(SquadHandler(getSquad)))
+	router.POST("/squad/:id", context.with(SquadHandler(postSquadMember)))
 
 	return http.HandlerFunc(router.ServeHTTP)
 }
+
