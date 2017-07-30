@@ -6,6 +6,8 @@ import (
 
 	"net/http"
 
+	"net/url"
+
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/service"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/testutil"
@@ -36,7 +38,6 @@ func TestWillErrorWhenDatasourceNotAvailable(t *testing.T) {
 		DbTimeout:    time.Millisecond / 100,
 	}
 	handler := service.MakeMainHandler(config)
-
 	tester := testutil.New(t, handler)
 
 	tester.GetSquadList().
@@ -62,13 +63,11 @@ func TestGETSquadWithNewSquadWillHaveNoMembers(t *testing.T) {
 		ID:      newSquadId,
 		Members: []api.SquadMember{},
 	}
-
 	assert.Equal(t, expectedSquad, squad)
 }
 
 func TestGETSquadWithUnknownSquadIdWillReturn404(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
-
 	squadId := bson.NewObjectId().Hex()
 
 	tester.GetSquad(squadId, nil, nil).
@@ -77,7 +76,6 @@ func TestGETSquadWithUnknownSquadIdWillReturn404(t *testing.T) {
 
 func TestGETSquadWithInvalidSquadIdWillReturn404(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
-
 	squadId := "This is not a valid object id"
 
 	tester.GetSquad(squadId, nil, nil).
@@ -87,7 +85,6 @@ func TestGETSquadWithInvalidSquadIdWillReturn404(t *testing.T) {
 func TestPOSTSquadMembersWillShowSquadMembersInSubsequentGET(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 	newSquadId := tester.PerformPostSquad()
-
 	members := []api.SquadMember{
 		api.NewSquadMember("dale@fake.com",
 			api.Range{
@@ -105,33 +102,49 @@ func TestPOSTSquadMembersWillShowSquadMembersInSubsequentGET(t *testing.T) {
 				End:   *api.Date(2018, 2, 7),
 			}),
 	}
-
 	for _, member := range members {
 		tester.PerformPostSquadMember(newSquadId, member)
 	}
-
 	squad := tester.PerformGetSquad(newSquadId, nil, nil)
+
 	assert.Equal(t, squad.Members, members)
 }
 
 func TestPOSTSquadMemberMultipleTimesWillUpdate(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 	squadId := tester.PerformPostSquad()
-
 	member := api.NewSquadMember("dale@fake.com",
 		api.Range{
 			Begin: *api.Date(2017, 07, 30),
 			End:   *api.Date(2017, 11, 10),
 		})
-
 	tester.PerformPostSquadMember(squadId, member)
-
 	member.Range.End = *api.Date(2017, 8, 10)
 
 	tester.PerformPostSquadMember(squadId, member)
-
 	squad := tester.PerformGetSquad(squadId, nil, nil)
+
 	assert.Equal(t, []api.SquadMember{member}, squad.Members)
+}
+
+func TestGETSquadWithInvalidBeginDateWillError(t *testing.T) {
+	tester := testutil.New(t, mainHandler)
+	squadId := tester.PerformPostSquad()
+	values := url.Values{}
+	values.Add("begin", "tomorrow")
+
+	tester.GetSquadWithParameters(squadId, &values).
+		CheckStatus(http.StatusBadRequest)
+}
+
+func TestGETSquadWithInvalidEndDateWillError(t *testing.T) {
+	tester := testutil.New(t, mainHandler)
+	squadId := tester.PerformPostSquad()
+	values := url.Values{}
+	values.Add("end", "tomorrow")
+
+	tester.GetSquadWithParameters(squadId, &values).
+		CheckStatus(http.StatusBadRequest)
 }
 
 func TestSquadMembersCanBeFilteredInGET(t *testing.T) {

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"time"
+
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 )
 
@@ -17,14 +19,18 @@ func createSquad(repository *SquadRepository) (ResponseEntity, error) {
 	return ResponseEntity{squad, http.StatusAccepted}, err
 }
 
+type SquadParameters struct {
+	begin *time.Time
+	end   *time.Time
+}
+
 func getSquad(request *http.Request, repository *SquadRepository, squadId string) (ResponseEntity, error) {
+	parameters, err := parseSquadParameters(request)
+	if err != nil {
+		return ResponseEntity{err, http.StatusBadRequest}, nil
+	}
 
-	values := request.URL.Query()
-
-	beginDate, err := api.ParseDate(values.Get("begin"))
-	endDate, err := api.ParseDate(values.Get("end"))
-
-	squad, err := repository.getSquad(squadId, beginDate, endDate)
+	squad, err := repository.getSquad(squadId, parameters.begin, parameters.end)
 	if err != nil {
 		return ResponseEntity{}, err
 	}
@@ -34,6 +40,17 @@ func getSquad(request *http.Request, repository *SquadRepository, squadId string
 	}
 
 	return ResponseEntity{squad, http.StatusOK}, nil
+}
+
+func parseSquadParameters(request *http.Request) (SquadParameters, error) {
+	values := request.URL.Query()
+	beginDate, err := api.ParseDate(values.Get("begin"))
+	if err != nil {
+		return SquadParameters{}, err
+	}
+	endDate, err := api.ParseDate(values.Get("end"))
+
+	return SquadParameters{beginDate, endDate}, err
 }
 
 func postSquadMember(request *http.Request, repository *SquadRepository, squadId string) (ResponseEntity, error) {

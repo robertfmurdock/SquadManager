@@ -49,6 +49,10 @@ func (tester *Tester) GetSquad(squadId string, begin *time.Time, end *time.Time)
 	addTimeValue(begin, values, "begin")
 	addTimeValue(end, values, "end")
 
+	return tester.GetSquadWithParameters(squadId, values)
+}
+
+func (tester *Tester) GetSquadWithParameters(squadId string, values *url.Values) Response {
 	squadUrl, err := url.Parse("/squad/" + squadId)
 
 	if err != nil {
