@@ -94,8 +94,8 @@ func (tester *Tester) PerformGetSquad(squadId string, begin *time.Time, end *tim
 	return squad
 }
 
-func (tester *Tester) PerformGetSquadList() []string {
-	var loadedJson []string
+func (tester *Tester) PerformGetSquadList() []api.Squad {
+	var loadedJson []api.Squad
 	tester.GetSquadList().
 		CheckStatus(http.StatusOK).
 		LoadJson(&loadedJson)

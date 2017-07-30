@@ -65,7 +65,6 @@ func (repository SquadRepository) addSquad() (bson.ObjectId, error) {
 }
 
 func (repository *SquadRepository) getSquad(idString string, begin *time.Time, end *time.Time) (*api.Squad, error) {
-
 	if !bson.IsObjectIdHex(idString) {
 		return nil, nil
 	}
@@ -83,18 +82,28 @@ func (repository *SquadRepository) getSquad(idString string, begin *time.Time, e
 		return nil, nil
 	}
 
-	squadMemberCollection := repository.SquadMemberCollection()
+	return repository.loadSquad(squadId, begin, end)
+}
 
+func (repository *SquadRepository) loadSquad(squadId bson.ObjectId, begin *time.Time, end *time.Time) (*api.Squad, error) {
 	squadMemberDocuments := []SquadMemberDocument{}
-
-	err := squadMemberCollection.Find(bson.M{"squadId": squadId}).All(&squadMemberDocuments)
-	if err != nil {
+	if err := repository.loadSquadMemberDocuments(bson.M{"squadId": squadId}, &squadMemberDocuments); err != nil {
 		return nil, err
 	}
-	return &api.Squad{
-		ID:      idString,
+
+	return buildSquad(squadId, squadMemberDocuments, begin, end), nil
+}
+
+func (repository *SquadRepository) loadSquadMemberDocuments(query interface{}, squadMemberDocuments *[]SquadMemberDocument) error {
+	return repository.SquadMemberCollection().Find(query).All(squadMemberDocuments)
+}
+
+func buildSquad(squadId bson.ObjectId, squadMemberDocuments []SquadMemberDocument, begin *time.Time, end *time.Time) *api.Squad {
+	squad := &api.Squad{
+		ID:      squadId.Hex(),
 		Members: api.FilterMembers(toApiSquadMemberList(squadMemberDocuments), begin, end),
-	}, nil
+	}
+	return squad
 }
 
 func toApiSquadMemberList(documents []SquadMemberDocument) []api.SquadMember {
@@ -136,22 +145,34 @@ func (repository SquadRepository) findSquadDocuments(query interface{}) ([]Squad
 	return squadDocuments, err
 }
 
-func (repository SquadRepository) listSquads() ([]string, error) {
+func (repository SquadRepository) listSquads() ([]api.Squad, error) {
 	squadDocuments, err := repository.findSquadDocuments(bson.M{})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return toSquadIds(squadDocuments), nil
-}
+	var allSquadMemberDocuments []SquadMemberDocument
+	repository.loadSquadMemberDocuments(bson.M{}, &allSquadMemberDocuments)
 
-func toSquadIds(documents []SquadDocument) []string {
-	idList := make([]string, len(documents))
-	for index, document := range documents {
-		idList[index] = document.ID.Hex()
+	squadList := make([]api.Squad, len(squadDocuments))
+	for index, document := range squadDocuments {
+		relatedSquadMemberDocuments := filterBySquadId(document.ID, allSquadMemberDocuments)
+		squad := buildSquad(document.ID, relatedSquadMemberDocuments, nil, nil)
+
+		squadList[index] = *squad
 	}
-	return idList
+
+	return squadList, nil
+}
+func filterBySquadId(squadId bson.ObjectId, documents []SquadMemberDocument) []SquadMemberDocument {
+	var results []SquadMemberDocument
+	for _, document := range documents {
+		if document.SquadID == squadId {
+			results = append(results, document)
+		}
+	}
+	return results
 }
 
 type SquadDocument struct {

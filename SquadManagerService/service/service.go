@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"log"
+
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -28,6 +30,25 @@ func MakeMainHandler(config Configuration) http.Handler {
 	router.GET("/squad/:id", context.with(SquadHandler(getSquad)))
 	router.POST("/squad/:id", context.with(SquadHandler(postSquadMember)))
 
-	return http.HandlerFunc(router.ServeHTTP)
+	return LogRequest(router.ServeHTTP)
 }
 
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (writer *loggingResponseWriter) WriteHeader(code int) {
+	writer.statusCode = code
+	writer.ResponseWriter.WriteHeader(code)
+}
+
+func LogRequest(next http.HandlerFunc) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		start := time.Now()
+		loggingWriter := &loggingResponseWriter{ResponseWriter: writer, statusCode: http.StatusOK}
+		next(loggingWriter, request)
+		duration := time.Now().Sub(start)
+		log.Println(loggingWriter.statusCode, duration, request.URL.String())
+	}
+}

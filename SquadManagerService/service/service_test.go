@@ -50,7 +50,7 @@ func TestPOSTSquadWillIncludeNewSquadInSubsequentGET(t *testing.T) {
 	newSquadId := tester.PerformPostSquad()
 	squadList := tester.PerformGetSquadList()
 
-	assert.Contains(t, squadList, newSquadId)
+	assert.Contains(t, squadList, api.Squad{ID: newSquadId, Members: []api.SquadMember{}})
 }
 
 func TestGETSquadWithNewSquadWillHaveNoMembers(t *testing.T) {
@@ -82,7 +82,7 @@ func TestGETSquadWithInvalidSquadIdWillReturn404(t *testing.T) {
 		CheckStatus(http.StatusNotFound)
 }
 
-func TestPOSTSquadMembersWillShowSquadMembersInSubsequentGET(t *testing.T) {
+func TestPOSTSquadMembersWillShowSquadMembersInSubsequentGETSquad(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 	newSquadId := tester.PerformPostSquad()
 	members := []api.SquadMember{
@@ -107,7 +107,35 @@ func TestPOSTSquadMembersWillShowSquadMembersInSubsequentGET(t *testing.T) {
 	}
 	squad := tester.PerformGetSquad(newSquadId, nil, nil)
 
-	assert.Equal(t, squad.Members, members)
+	assert.Equal(t, members, squad.Members)
+}
+
+func TestPOSTSquadMembersWillShowSquadMembersInSubsequentGETSquadList(t *testing.T) {
+	tester := testutil.New(t, mainHandler)
+	newSquadId := tester.PerformPostSquad()
+	members := []api.SquadMember{
+		api.NewSquadMember("dale@fake.com",
+			api.Range{
+				Begin: *api.Date(2017, 07, 30),
+				End:   *api.Date(2017, 11, 10),
+			}),
+		api.NewSquadMember("chip@fake.com",
+			api.Range{
+				Begin: *api.Date(2017, 05, 1),
+				End:   *api.Date(2017, 9, 15),
+			}),
+		api.NewSquadMember("daisy@fake.com",
+			api.Range{
+				Begin: *api.Date(2017, 11, 15),
+				End:   *api.Date(2018, 2, 7),
+			}),
+	}
+	for _, member := range members {
+		tester.PerformPostSquadMember(newSquadId, member)
+	}
+	squadList := tester.PerformGetSquadList()
+
+	assert.Contains(t, squadList, api.Squad{ID: newSquadId, Members: members})
 }
 
 func TestPOSTSquadMemberMultipleTimesWillUpdate(t *testing.T) {
@@ -150,7 +178,6 @@ func TestGETSquadWithInvalidEndDateWillError(t *testing.T) {
 func TestSquadMembersCanBeFilteredInGET(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 	newSquadId := tester.PerformPostSquad()
-
 	members := []api.SquadMember{
 		api.NewSquadMember("dale@fake.com",
 			api.Range{
@@ -168,12 +195,15 @@ func TestSquadMembersCanBeFilteredInGET(t *testing.T) {
 				End:   *api.Date(2018, 2, 7),
 			}),
 	}
-
 	for _, member := range members {
 		tester.PerformPostSquadMember(newSquadId, member)
 	}
 
-	squad := tester.PerformGetSquad(newSquadId, api.Date(2017, 8, 11), api.Date(2017, 9, 15))
+	squad := tester.PerformGetSquad(
+		newSquadId,
+		api.Date(2017, 8, 11),
+		api.Date(2017, 9, 15),
+	)
 	assert.Equal(t, members[1:2], squad.Members)
 }
 
