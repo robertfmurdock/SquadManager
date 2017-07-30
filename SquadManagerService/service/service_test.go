@@ -9,7 +9,7 @@ import (
 
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/service"
-	"github.com/robertfmurdock/SquadManager/SquadManagerService/testutility"
+	tu "github.com/robertfmurdock/SquadManager/SquadManagerService/testutil"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -24,7 +24,7 @@ var (
 )
 
 func TestNoResponseOnMainUrl(t *testing.T) {
-	request := testutility.NewRequest(t, "GET", "/", nil)
+	request := tu.NewRequest(t, "GET", "/", nil)
 	recorder := httptest.NewRecorder()
 
 	mainHandler.ServeHTTP(recorder, request)
@@ -40,28 +40,25 @@ func TestWillErrorWhenDatasourceNotAvailable(t *testing.T) {
 	}
 	handler := service.MakeMainHandler(config)
 
-	wrapper := testutility.Wrap(t, handler)
+	wrapper := tu.Wrap(t, handler)
 
-	request := testutility.NewRequest(t, "GET", "/squad", nil)
-
-	response := wrapper.PerformRequest(request)
-
-	assert.Equal(t, response.Code, 500)
-
+	tu.GetSquadList().
+		WithStatus(http.StatusInternalServerError).
+		Perform(wrapper)
 }
 
 func TestPOSTSquadWillIncludeNewSquadInSubsequentGET(t *testing.T) {
-	wrapper := testutility.Wrap(t, mainHandler)
+	wrapper := tu.Wrap(t, mainHandler)
 
-	newSquadId := wrapper.PerformPostSquadAndGetId()
+	newSquadId := wrapper.PerformPostSquad()
 	squadList := wrapper.PerformGetSquadList()
 
 	assert.Contains(t, squadList, newSquadId)
 }
 
 func TestGETSquadWithNewSquadWillHaveNoMembers(t *testing.T) {
-	wrapper := testutility.Wrap(t, mainHandler)
-	newSquadId := wrapper.PerformPostSquadAndGetId()
+	wrapper := tu.Wrap(t, mainHandler)
+	newSquadId := wrapper.PerformPostSquad()
 
 	squad := wrapper.PerformGetSquad(newSquadId)
 
@@ -74,39 +71,38 @@ func TestGETSquadWithNewSquadWillHaveNoMembers(t *testing.T) {
 }
 
 func TestGETSquadWithUnknownSquadIdWillReturn404(t *testing.T) {
-	wrapper := testutility.Wrap(t, mainHandler)
+	wrapper := tu.Wrap(t, mainHandler)
 
 	squadId := bson.NewObjectId().Hex()
 
-	request := testutility.NewRequest(t, "GET", "/squad/"+squadId, nil)
-
-	recorder := wrapper.PerformRequest(request)
-
-	assert.Equal(t, http.StatusNotFound, recorder.Code)
+	tu.GetSquad(squadId).
+		WithStatus(http.StatusNotFound).
+		Perform(wrapper)
 }
 
 func TestGETSquadWithInvalidSquadIdWillReturn404(t *testing.T) {
-	wrapper := testutility.Wrap(t, mainHandler)
+	wrapper := tu.Wrap(t, mainHandler)
 
 	squadId := "This is not a valid object id"
 
-	request := testutility.NewRequest(t, "GET", "/squad/"+squadId, nil)
-
-	recorder := wrapper.PerformRequest(request)
-
-	assert.Equal(t, http.StatusNotFound, recorder.Code)
+	tu.GetSquad(squadId).
+		WithStatus(http.StatusNotFound).
+		Perform(wrapper)
 }
 
 func TestPOSTSquadMemberWillShowSquadMemberInSubsequentGET(t *testing.T) {
-	wrapper := testutility.Wrap(t, mainHandler)
-	newSquadId := wrapper.PerformPostSquadAndGetId()
+	wrapper := tu.Wrap(t, mainHandler)
+	newSquadId := wrapper.PerformPostSquad()
 
 	now := time.Now().Truncate(24 * time.Hour)
 	later := now.AddDate(1, 0, 0)
 
 	member := api.SquadMember{
-		ID:    bson.NewObjectId().Hex(),
-		Range: api.Range{Begin: now, End: later},
+		ID: bson.NewObjectId().Hex(),
+		Range: api.Range{
+			Begin: now,
+			End:   later,
+		},
 		Email: "fakeemail@fake.com",
 	}
 	memberId := wrapper.PerformPostSquadMember(newSquadId, member)
@@ -118,8 +114,8 @@ func TestPOSTSquadMemberWillShowSquadMemberInSubsequentGET(t *testing.T) {
 	assert.Contains(t, squad.Members, member)
 }
 
-func TestPOSTSquadMemberWill404(t *testing.T) {
-	wrapper := testutility.Wrap(t, mainHandler)
+func TestPOSTSquadMemberWill404WhenSquadDoesNotExist(t *testing.T) {
+	wrapper := tu.Wrap(t, mainHandler)
 
 	now := time.Now().Truncate(24 * time.Hour)
 	later := now.AddDate(1, 0, 0)
@@ -131,9 +127,7 @@ func TestPOSTSquadMemberWill404(t *testing.T) {
 	}
 	squadId := bson.NewObjectId().Hex()
 
-	request := testutility.MakePostRequest(t, "/squad/"+squadId, member)
-
-	response := wrapper.PerformRequest(request)
-
-	assert.Equal(t, http.StatusNotFound, response.Code)
+	tu.PostSquadMember(squadId, member).
+		WithStatus(http.StatusNotFound).
+		Perform(wrapper)
 }
