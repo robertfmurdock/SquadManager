@@ -8,6 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"net/url"
+	"time"
+
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,8 +44,26 @@ func (tester *Tester) GetSquadList() Response {
 	return tester.DoRequest("GET", "/squad", nil)
 }
 
-func (tester *Tester) GetSquad(squadId string) Response {
-	return tester.DoRequest("GET", "/squad/"+squadId, nil)
+func (tester *Tester) GetSquad(squadId string, begin *time.Time, end *time.Time) Response {
+	values := &url.Values{}
+	addTimeValue(begin, values, "begin")
+	addTimeValue(end, values, "end")
+
+	squadUrl, err := url.Parse("/squad/" + squadId)
+
+	if err != nil {
+		tester.t.Fatal(err)
+	}
+
+	squadUrl.RawQuery = values.Encode()
+
+	return tester.DoRequest("GET", squadUrl.String(), nil)
+}
+
+func addTimeValue(t *time.Time, values *url.Values, key string) {
+	if t != nil {
+		values.Add(key, api.FormatDate(t))
+	}
 }
 
 func (tester *Tester) PostSquad() Response {
@@ -61,9 +82,9 @@ func (tester *Tester) PerformPostSquad() string {
 	return newSquadId
 }
 
-func (tester *Tester) PerformGetSquad(squadId string) api.Squad {
+func (tester *Tester) PerformGetSquad(squadId string, begin *time.Time, end *time.Time) api.Squad {
 	squad := api.Squad{}
-	tester.GetSquad(squadId).
+	tester.GetSquad(squadId, begin, end).
 		CheckStatus(http.StatusOK).
 		LoadJson(&squad)
 	return squad
@@ -77,12 +98,13 @@ func (tester *Tester) PerformGetSquadList() []string {
 	return loadedJson
 }
 
-func (tester *Tester) PerformPostSquadMember(squadId string, squadMember api.SquadMember) string {
+func (tester *Tester) PerformPostSquadMember(squadId string, squadMember api.SquadMember) {
 	var newSquadMemberId string
 	tester.PostSquadMember(squadId, squadMember).
 		CheckStatus(http.StatusAccepted).
 		LoadJson(&newSquadMemberId)
-	return newSquadMemberId
+
+	assert.Equal(tester.t, squadMember.ID, newSquadMemberId)
 }
 
 type Response struct {

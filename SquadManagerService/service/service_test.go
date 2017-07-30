@@ -56,7 +56,7 @@ func TestGETSquadWithNewSquadWillHaveNoMembers(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 	newSquadId := tester.PerformPostSquad()
 
-	squad := tester.PerformGetSquad(newSquadId)
+	squad := tester.PerformGetSquad(newSquadId, nil, nil)
 
 	expectedSquad := api.Squad{
 		ID:      newSquadId,
@@ -71,7 +71,7 @@ func TestGETSquadWithUnknownSquadIdWillReturn404(t *testing.T) {
 
 	squadId := bson.NewObjectId().Hex()
 
-	tester.GetSquad(squadId).
+	tester.GetSquad(squadId, nil, nil).
 		CheckStatus(http.StatusNotFound)
 }
 
@@ -80,30 +80,68 @@ func TestGETSquadWithInvalidSquadIdWillReturn404(t *testing.T) {
 
 	squadId := "This is not a valid object id"
 
-	tester.GetSquad(squadId).
+	tester.GetSquad(squadId, nil, nil).
 		CheckStatus(http.StatusNotFound)
 }
 
-func TestPOSTSquadMemberWillShowSquadMemberInSubsequentGET(t *testing.T) {
+func TestPOSTSquadMembersWillShowSquadMembersInSubsequentGET(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 	newSquadId := tester.PerformPostSquad()
 
-	now := time.Now().Truncate(24 * time.Hour)
-	later := now.AddDate(1, 0, 0)
-	member := api.SquadMember{
-		ID: bson.NewObjectId().Hex(),
-		Range: api.Range{
-			Begin: now,
-			End:   later,
-		},
-		Email: "fakeemail@fake.com",
+	members := []api.SquadMember{
+		api.NewSquadMember("dale@fake.com",
+			api.Range{
+				Begin: *api.Date(2017, 07, 30),
+				End:   *api.Date(2017, 11, 10),
+			}),
+		api.NewSquadMember("chip@fake.com",
+			api.Range{
+				Begin: *api.Date(2017, 05, 1),
+				End:   *api.Date(2017, 9, 15),
+			}),
+		api.NewSquadMember("daisy@fake.com",
+			api.Range{
+				Begin: *api.Date(2017, 11, 15),
+				End:   *api.Date(2018, 2, 7),
+			}),
 	}
 
-	memberId := tester.PerformPostSquadMember(newSquadId, member)
-	assert.Equal(t, member.ID, memberId)
+	for _, member := range members {
+		tester.PerformPostSquadMember(newSquadId, member)
+	}
 
-	squad := tester.PerformGetSquad(newSquadId)
-	assert.Contains(t, squad.Members, member)
+	squad := tester.PerformGetSquad(newSquadId, nil, nil)
+	assert.Equal(t, squad.Members, members)
+}
+
+func TestSquadMembersCanBeFilteredInGET(t *testing.T) {
+	tester := testutil.New(t, mainHandler)
+	newSquadId := tester.PerformPostSquad()
+
+	members := []api.SquadMember{
+		api.NewSquadMember("dale@fake.com",
+			api.Range{
+				Begin: *api.Date(2017, 7, 30),
+				End:   *api.Date(2017, 8, 10),
+			}),
+		api.NewSquadMember("chip@fake.com",
+			api.Range{
+				Begin: *api.Date(2017, 8, 11),
+				End:   *api.Date(2017, 9, 15),
+			}),
+		api.NewSquadMember("daisy@fake.com",
+			api.Range{
+				Begin: *api.Date(2017, 9, 20),
+				End:   *api.Date(2018, 2, 7),
+			}),
+	}
+
+	for _, member := range members {
+		tester.PerformPostSquadMember(newSquadId, member)
+	}
+
+	squad := tester.PerformGetSquad(newSquadId, api.Date(2017, 8, 11), api.Date(2017, 9, 15))
+	assert.Equal(t, members[1:2], squad.Members)
 }
 
 func TestPOSTSquadMemberWill404WhenSquadDoesNotExist(t *testing.T) {

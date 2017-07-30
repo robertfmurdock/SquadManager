@@ -1,6 +1,8 @@
 package service
 
 import (
+	"time"
+
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -62,7 +64,7 @@ func (repository SquadRepository) addSquad() (bson.ObjectId, error) {
 	return id, collection.Insert(SquadDocument{id})
 }
 
-func (repository *SquadRepository) getSquad(idString string) (*api.Squad, error) {
+func (repository *SquadRepository) getSquad(idString string, begin *time.Time, end *time.Time) (*api.Squad, error) {
 
 	if !bson.IsObjectIdHex(idString) {
 		return nil, nil
@@ -91,7 +93,7 @@ func (repository *SquadRepository) getSquad(idString string) (*api.Squad, error)
 	}
 	return &api.Squad{
 		ID:      idString,
-		Members: toApiSquadMemberList(squadMemberDocuments),
+		Members: api.FilterMembers(toApiSquadMemberList(squadMemberDocuments), begin, end),
 	}, nil
 }
 

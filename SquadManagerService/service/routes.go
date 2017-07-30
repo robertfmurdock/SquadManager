@@ -17,8 +17,14 @@ func createSquad(repository *SquadRepository) (ResponseEntity, error) {
 	return ResponseEntity{squad, http.StatusAccepted}, err
 }
 
-func getSquad(_ *http.Request, repository *SquadRepository, squadId string) (ResponseEntity, error) {
-	squad, err := repository.getSquad(squadId)
+func getSquad(request *http.Request, repository *SquadRepository, squadId string) (ResponseEntity, error) {
+
+	values := request.URL.Query()
+
+	beginDate, err := api.ParseDate(values.Get("begin"))
+	endDate, err := api.ParseDate(values.Get("end"))
+
+	squad, err := repository.getSquad(squadId, beginDate, endDate)
 	if err != nil {
 		return ResponseEntity{}, err
 	}
@@ -37,7 +43,7 @@ func postSquadMember(request *http.Request, repository *SquadRepository, squadId
 		return ResponseEntity{}, err
 	}
 
-	if squad, err := repository.getSquad(squadId); err != nil || squad == nil {
+	if squad, err := repository.getSquad(squadId, nil, nil); err != nil || squad == nil {
 		return ResponseEntity{code: http.StatusNotFound}, err
 	}
 
