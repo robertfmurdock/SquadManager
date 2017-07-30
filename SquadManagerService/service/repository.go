@@ -145,7 +145,7 @@ func (repository SquadRepository) findSquadDocuments(query interface{}) ([]Squad
 	return squadDocuments, err
 }
 
-func (repository SquadRepository) listSquads() ([]api.Squad, error) {
+func (repository SquadRepository) listSquads(begin *time.Time, end *time.Time) ([]api.Squad, error) {
 	squadDocuments, err := repository.findSquadDocuments(bson.M{})
 
 	if err != nil {
@@ -155,12 +155,15 @@ func (repository SquadRepository) listSquads() ([]api.Squad, error) {
 	var allSquadMemberDocuments []SquadMemberDocument
 	repository.loadSquadMemberDocuments(bson.M{}, &allSquadMemberDocuments)
 
-	squadList := make([]api.Squad, len(squadDocuments))
-	for index, document := range squadDocuments {
+	var squadList []api.Squad
+	for _, document := range squadDocuments {
 		relatedSquadMemberDocuments := filterBySquadId(document.ID, allSquadMemberDocuments)
-		squad := buildSquad(document.ID, relatedSquadMemberDocuments, nil, nil)
+		squad := buildSquad(document.ID, relatedSquadMemberDocuments, begin, end)
 
-		squadList[index] = *squad
+		noRangeRestrictions := begin == nil && end == nil
+		if noRangeRestrictions || len(squad.Members) != 0 {
+			squadList = append(squadList, *squad)
+		}
 	}
 
 	return squadList, nil

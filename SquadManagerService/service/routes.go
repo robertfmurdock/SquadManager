@@ -6,11 +6,13 @@ import (
 
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 )
 
-func listSquads(repository *SquadRepository) (ResponseEntity, error) {
-	squads, err := repository.listSquads()
+func listSquads(request *http.Request, _ httprouter.Params, repository *SquadRepository) (ResponseEntity, error) {
+	squadParameters, err := parseSquadParameters(request)
+	squads, err := repository.listSquads(squadParameters.begin, squadParameters.end)
 	return ResponseEntity{squads, http.StatusOK}, err
 }
 

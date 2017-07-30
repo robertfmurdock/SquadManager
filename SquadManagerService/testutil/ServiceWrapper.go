@@ -40,28 +40,35 @@ func (tester *Tester) DoRequest(method, urlStr string, body interface{}) Respons
 	return Response{tester, tester.PerformRequest(request)}
 }
 
-func (tester *Tester) GetSquadList() Response {
-	return tester.DoRequest("GET", "/squad", nil)
+func (tester *Tester) GetSquadList(begin *time.Time, end *time.Time) Response {
+	values := valuesWithDateRange(begin, end)
+	squadUrl := tester.urlWithValues("/squad", values)
+	return tester.DoRequest("GET", squadUrl.String(), nil)
 }
 
 func (tester *Tester) GetSquad(squadId string, begin *time.Time, end *time.Time) Response {
-	values := &url.Values{}
-	addTimeValue(begin, values, "begin")
-	addTimeValue(end, values, "end")
-
+	values := valuesWithDateRange(begin, end)
 	return tester.GetSquadWithParameters(squadId, values)
 }
 
-func (tester *Tester) GetSquadWithParameters(squadId string, values *url.Values) Response {
-	squadUrl, err := url.Parse("/squad/" + squadId)
+func valuesWithDateRange(begin *time.Time, end *time.Time) *url.Values {
+	values := &url.Values{}
+	addTimeValue(begin, values, "begin")
+	addTimeValue(end, values, "end")
+	return values
+}
 
+func (tester *Tester) GetSquadWithParameters(squadId string, values *url.Values) Response {
+	squadUrl := tester.urlWithValues("/squad/" + squadId, values)
+	return tester.DoRequest("GET", squadUrl.String(), nil)
+}
+func (tester *Tester ) urlWithValues(urlString string, values *url.Values) (*url.URL) {
+	squadUrl, err := url.Parse(urlString)
 	if err != nil {
 		tester.t.Fatal(err)
 	}
-
 	squadUrl.RawQuery = values.Encode()
-
-	return tester.DoRequest("GET", squadUrl.String(), nil)
+	return squadUrl
 }
 
 func addTimeValue(t *time.Time, values *url.Values, key string) {
@@ -94,9 +101,9 @@ func (tester *Tester) PerformGetSquad(squadId string, begin *time.Time, end *tim
 	return squad
 }
 
-func (tester *Tester) PerformGetSquadList() []api.Squad {
+func (tester *Tester) PerformGetSquadList(begin *time.Time, end *time.Time) []api.Squad {
 	var loadedJson []api.Squad
-	tester.GetSquadList().
+	tester.GetSquadList(begin, end).
 		CheckStatus(http.StatusOK).
 		LoadJson(&loadedJson)
 	return loadedJson
