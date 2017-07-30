@@ -114,6 +114,26 @@ func TestPOSTSquadMembersWillShowSquadMembersInSubsequentGET(t *testing.T) {
 	assert.Equal(t, squad.Members, members)
 }
 
+func TestPOSTSquadMemberMultipleTimesWillUpdate(t *testing.T) {
+	tester := testutil.New(t, mainHandler)
+	squadId := tester.PerformPostSquad()
+
+	member := api.NewSquadMember("dale@fake.com",
+		api.Range{
+			Begin: *api.Date(2017, 07, 30),
+			End:   *api.Date(2017, 11, 10),
+		})
+
+	tester.PerformPostSquadMember(squadId, member)
+
+	member.Range.End = *api.Date(2017, 8, 10)
+
+	tester.PerformPostSquadMember(squadId, member)
+
+	squad := tester.PerformGetSquad(squadId, nil, nil)
+	assert.Equal(t, []api.SquadMember{member}, squad.Members)
+}
+
 func TestSquadMembersCanBeFilteredInGET(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 	newSquadId := tester.PerformPostSquad()

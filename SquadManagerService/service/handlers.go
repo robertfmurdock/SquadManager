@@ -2,8 +2,9 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type ResponseEntity struct {
@@ -19,6 +20,7 @@ func (handler ThinHandler) With(service *Context) httprouter.Handle {
 		entity, err := handler(request, params)
 		if err != nil {
 			writer.WriteHeader(500)
+			json.NewEncoder(writer).Encode(err)
 			return
 		}
 

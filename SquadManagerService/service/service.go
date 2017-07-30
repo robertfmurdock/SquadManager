@@ -2,8 +2,9 @@ package service
 
 import (
 	"net/http"
-	"github.com/julienschmidt/httprouter"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type Configuration struct {

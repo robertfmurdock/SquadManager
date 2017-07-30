@@ -115,7 +115,9 @@ func toApiSquadMember(document SquadMemberDocument) api.SquadMember {
 
 func (repository SquadRepository) postSquadMember(squadMember api.SquadMember, squadId string) error {
 	collection := repository.SquadMemberCollection()
-	return collection.Insert(toSquadMemberDocument(squadMember, bson.ObjectIdHex(squadId)))
+	squadMemberDocument := toSquadMemberDocument(squadMember, bson.ObjectIdHex(squadId))
+	_, err := collection.Upsert(bson.M{"_id": squadMemberDocument.ID}, squadMemberDocument)
+	return err
 }
 
 func toSquadMemberDocument(squadMember api.SquadMember, squadId bson.ObjectId) SquadMemberDocument {
@@ -135,7 +137,6 @@ func (repository SquadRepository) findSquadDocuments(query interface{}) ([]Squad
 }
 
 func (repository SquadRepository) listSquads() ([]string, error) {
-
 	squadDocuments, err := repository.findSquadDocuments(bson.M{})
 
 	if err != nil {

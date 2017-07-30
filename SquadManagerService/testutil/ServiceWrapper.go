@@ -113,14 +113,17 @@ type Response struct {
 }
 
 func (response Response) CheckStatus(status int) Response {
-	assert.Equal(response.Tester.t, status, response.Recorder.Code)
+	if !assert.Equal(response.Tester.t, status, response.Recorder.Code) {
+		response.Tester.t.Fatal(response.Recorder.Body.String())
+	}
+
 	return response
 }
 
 func (response Response) LoadJson(loadLocation interface{}) Response {
 	err := json.Unmarshal(response.Recorder.Body.Bytes(), loadLocation)
 	if err != nil {
-		response.Tester.t.Fatal(err)
+		response.Tester.t.Fatal(err, response.Recorder.Body.String())
 	}
 	return response
 }
