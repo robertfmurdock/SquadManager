@@ -1,0 +1,15 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.8
+      - image: mongo:3.5
+    steps:
+      - checkout
+      - run:
+          name: Run unit tests
+          command: ./gradlew test
+      - store_artifacts:
+          path: .gogradle/reports/test
+      - store_test_results:
+          path: .gogradle/reports/test
