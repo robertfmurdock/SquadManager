@@ -8,19 +8,45 @@ import (
 )
 
 type Squad struct {
-	ID      string
+	ID      SquadId
 	Members []SquadMember
 }
 
+type SquadId bson.ObjectId
+
+func (id SquadId) String() string {
+	return bson.ObjectId(id).Hex()
+}
+
+func (id SquadId) MarshalJSON() ([]byte, error) {
+	return bson.ObjectId(id).MarshalJSON()
+}
+
+func (id *SquadId) UnmarshalJSON(data []byte) error {
+	objectId := (*bson.ObjectId)(id)
+	return objectId.UnmarshalJSON(data)
+}
+
 type SquadMember struct {
-	ID    string
+	ID    SquadMemberId
 	Range Range
 	Email string
 }
 
+type SquadMemberId bson.ObjectId
+
+func (id SquadMemberId) MarshalJSON() ([]byte, error) {
+	return bson.ObjectId(id).MarshalJSON()
+}
+
+func (id *SquadMemberId) UnmarshalJSON(data []byte) error {
+	objectId := (*bson.ObjectId)(id)
+	return objectId.UnmarshalJSON(data)
+}
+
 func NewSquadMember(email string, dateRange Range) SquadMember {
 	return SquadMember{
-		ID:    bson.NewObjectId().Hex(),
+		ID:    SquadMemberId(bson.NewObjectId()),
 		Range: dateRange,
 		Email: email,
 	}

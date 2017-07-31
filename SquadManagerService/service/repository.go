@@ -57,11 +57,10 @@ func (repository SquadRepository) SquadMemberCollection() *mgo.Collection {
 	return repository.Database().C("squadMember")
 }
 
-func (repository SquadRepository) addSquad() (bson.ObjectId, error) {
-	id := bson.NewObjectId()
-
+func (repository SquadRepository) addSquad() (api.SquadId, error) {
+	id := api.SquadId(bson.NewObjectId())
 	collection := repository.SquadCollection()
-	return id, collection.Insert(SquadDocument{id})
+	return id, collection.Insert(SquadDocument{bson.ObjectId(id)})
 }
 
 func (repository *SquadRepository) getSquad(idString string, begin *time.Time, end *time.Time) (*api.Squad, error) {
@@ -69,12 +68,12 @@ func (repository *SquadRepository) getSquad(idString string, begin *time.Time, e
 		return nil, nil
 	}
 
-	squadId := bson.ObjectIdHex(idString)
+	squadId := api.SquadId(bson.ObjectIdHex(idString))
 
 	squadCollection := repository.SquadCollection()
 	var squadDocuments []SquadDocument
 
-	if err := squadCollection.FindId(squadId).All(&squadDocuments); err != nil {
+	if err := squadCollection.FindId(bson.ObjectId(squadId)).All(&squadDocuments); err != nil {
 		return nil, err
 	}
 
@@ -85,9 +84,10 @@ func (repository *SquadRepository) getSquad(idString string, begin *time.Time, e
 	return repository.loadSquad(squadId, begin, end)
 }
 
-func (repository *SquadRepository) loadSquad(squadId bson.ObjectId, begin *time.Time, end *time.Time) (*api.Squad, error) {
+func (repository *SquadRepository) loadSquad(squadId api.SquadId, begin *time.Time, end *time.Time) (*api.Squad, error) {
+	query := bson.M{"squadId": bson.ObjectId(squadId)}
 	squadMemberDocuments := []SquadMemberDocument{}
-	if err := repository.loadSquadMemberDocuments(bson.M{"squadId": squadId}, &squadMemberDocuments); err != nil {
+	if err := repository.loadSquadMemberDocuments(query, &squadMemberDocuments); err != nil {
 		return nil, err
 	}
 
@@ -98,9 +98,9 @@ func (repository *SquadRepository) loadSquadMemberDocuments(query interface{}, s
 	return repository.SquadMemberCollection().Find(query).All(squadMemberDocuments)
 }
 
-func buildSquad(squadId bson.ObjectId, squadMemberDocuments []SquadMemberDocument, begin *time.Time, end *time.Time) *api.Squad {
+func buildSquad(squadId api.SquadId, squadMemberDocuments []SquadMemberDocument, begin *time.Time, end *time.Time) *api.Squad {
 	squad := &api.Squad{
-		ID:      squadId.Hex(),
+		ID:      squadId,
 		Members: api.FilterMembers(toApiSquadMemberList(squadMemberDocuments), begin, end),
 	}
 	return squad
@@ -116,7 +116,7 @@ func toApiSquadMemberList(documents []SquadMemberDocument) []api.SquadMember {
 
 func toApiSquadMember(document SquadMemberDocument) api.SquadMember {
 	return api.SquadMember{
-		ID:    document.ID.Hex(),
+		ID:    api.SquadMemberId(document.ID),
 		Range: document.Range,
 		Email: document.Email,
 	}
@@ -124,17 +124,17 @@ func toApiSquadMember(document SquadMemberDocument) api.SquadMember {
 
 func (repository SquadRepository) postSquadMember(squadMember api.SquadMember, squadId string) error {
 	collection := repository.SquadMemberCollection()
-	squadMemberDocument := toSquadMemberDocument(squadMember, bson.ObjectIdHex(squadId))
+	squadMemberDocument := toSquadMemberDocument(squadMember, api.SquadId(bson.ObjectIdHex(squadId)))
 	_, err := collection.Upsert(bson.M{"_id": squadMemberDocument.ID}, squadMemberDocument)
 	return err
 }
 
-func toSquadMemberDocument(squadMember api.SquadMember, squadId bson.ObjectId) SquadMemberDocument {
+func toSquadMemberDocument(squadMember api.SquadMember, squadId api.SquadId) SquadMemberDocument {
 	return SquadMemberDocument{
-		ID:      bson.ObjectIdHex(squadMember.ID),
+		ID:      bson.ObjectId(squadMember.ID),
+		SquadID: bson.ObjectId(squadId),
 		Email:   squadMember.Email,
 		Range:   squadMember.Range,
-		SquadID: squadId,
 	}
 }
 
@@ -157,8 +157,9 @@ func (repository SquadRepository) listSquads(begin *time.Time, end *time.Time) (
 
 	var squadList []api.Squad
 	for _, document := range squadDocuments {
-		relatedSquadMemberDocuments := filterBySquadId(document.ID, allSquadMemberDocuments)
-		squad := buildSquad(document.ID, relatedSquadMemberDocuments, begin, end)
+		squadId := api.SquadId(document.ID)
+		relatedSquadMemberDocuments := filterBySquadId(squadId, allSquadMemberDocuments)
+		squad := buildSquad(squadId, relatedSquadMemberDocuments, begin, end)
 
 		noRangeRestrictions := begin == nil && end == nil
 		if noRangeRestrictions || len(squad.Members) != 0 {
@@ -168,10 +169,10 @@ func (repository SquadRepository) listSquads(begin *time.Time, end *time.Time) (
 
 	return squadList, nil
 }
-func filterBySquadId(squadId bson.ObjectId, documents []SquadMemberDocument) []SquadMemberDocument {
+func filterBySquadId(squadId api.SquadId, documents []SquadMemberDocument) []SquadMemberDocument {
 	var results []SquadMemberDocument
 	for _, document := range documents {
-		if document.SquadID == squadId {
+		if api.SquadId(document.SquadID) == squadId {
 			results = append(results, document)
 		}
 	}

@@ -77,7 +77,7 @@ func TestGETSquadWithNewSquadWillHaveNoMembers(t *testing.T) {
 
 func TestGETSquadWithUnknownSquadIdWillReturn404(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
-	squadId := bson.NewObjectId().Hex()
+	squadId := api.SquadId(bson.NewObjectId())
 
 	tester.GetSquad(squadId, nil, nil).
 		CheckStatus(http.StatusNotFound)
@@ -87,7 +87,7 @@ func TestGETSquadWithInvalidSquadIdWillReturn404(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 	squadId := "This is not a valid object id"
 
-	tester.GetSquad(squadId, nil, nil).
+	tester.DoRequest("GET", "/squad/"+squadId, nil).
 		CheckStatus(http.StatusNotFound)
 }
 
@@ -95,7 +95,7 @@ func TestPOSTInvalidSquadMemberWillError(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 	squadId := tester.PerformPostSquad()
 
-	tester.DoRequest("POST", "/squad/"+squadId, "Not a valid member").
+	tester.DoRequest("POST", "/squad/"+squadId.String(), "Not a valid member").
 		CheckStatus(http.StatusBadRequest)
 }
 
@@ -267,11 +267,11 @@ func TestPOSTSquadMemberWill404WhenSquadDoesNotExist(t *testing.T) {
 	later := now.AddDate(1, 0, 0)
 
 	member := api.SquadMember{
-		ID:    bson.NewObjectId().Hex(),
+		ID:    api.SquadMemberId(bson.NewObjectId()),
 		Range: api.Range{Begin: now, End: later},
 		Email: "fakeemail@fake.com",
 	}
-	squadId := bson.NewObjectId().Hex()
+	squadId := api.SquadId(bson.NewObjectId())
 
 	tester.PostSquadMember(squadId, member).
 		CheckStatus(http.StatusNotFound)

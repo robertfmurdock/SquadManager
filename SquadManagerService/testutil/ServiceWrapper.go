@@ -46,7 +46,7 @@ func (tester *Tester) GetSquadList(begin *time.Time, end *time.Time) Response {
 	return tester.DoRequest("GET", squadUrl.String(), nil)
 }
 
-func (tester *Tester) GetSquad(squadId string, begin *time.Time, end *time.Time) Response {
+func (tester *Tester) GetSquad(squadId api.SquadId, begin *time.Time, end *time.Time) Response {
 	values := valuesWithDateRange(begin, end)
 	return tester.GetSquadWithParameters(squadId, values)
 }
@@ -58,11 +58,11 @@ func valuesWithDateRange(begin *time.Time, end *time.Time) *url.Values {
 	return values
 }
 
-func (tester *Tester) GetSquadWithParameters(squadId string, values *url.Values) Response {
-	squadUrl := tester.urlWithValues("/squad/" + squadId, values)
+func (tester *Tester) GetSquadWithParameters(squadId api.SquadId, values *url.Values) Response {
+	squadUrl := tester.urlWithValues("/squad/"+squadId.String(), values)
 	return tester.DoRequest("GET", squadUrl.String(), nil)
 }
-func (tester *Tester ) urlWithValues(urlString string, values *url.Values) (*url.URL) {
+func (tester *Tester) urlWithValues(urlString string, values *url.Values) (*url.URL) {
 	squadUrl, err := url.Parse(urlString)
 	if err != nil {
 		tester.t.Fatal(err)
@@ -81,19 +81,19 @@ func (tester *Tester) PostSquad() Response {
 	return tester.DoRequest("POST", "/squad", "")
 }
 
-func (tester *Tester) PostSquadMember(squadId string, member api.SquadMember) Response {
-	return tester.DoRequest("POST", "/squad/"+squadId, member)
+func (tester *Tester) PostSquadMember(squadId api.SquadId, member api.SquadMember) Response {
+	return tester.DoRequest("POST", "/squad/"+squadId.String(), member)
 }
 
-func (tester *Tester) PerformPostSquad() string {
-	var newSquadId string
+func (tester *Tester) PerformPostSquad() api.SquadId {
+	var newSquadId api.SquadId
 	tester.PostSquad().
 		CheckStatus(http.StatusAccepted).
 		LoadJson(&newSquadId)
 	return newSquadId
 }
 
-func (tester *Tester) PerformGetSquad(squadId string, begin *time.Time, end *time.Time) api.Squad {
+func (tester *Tester) PerformGetSquad(squadId api.SquadId, begin *time.Time, end *time.Time) api.Squad {
 	squad := api.Squad{}
 	tester.GetSquad(squadId, begin, end).
 		CheckStatus(http.StatusOK).
@@ -109,8 +109,8 @@ func (tester *Tester) PerformGetSquadList(begin *time.Time, end *time.Time) []ap
 	return loadedJson
 }
 
-func (tester *Tester) PerformPostSquadMember(squadId string, squadMember api.SquadMember) {
-	var newSquadMemberId string
+func (tester *Tester) PerformPostSquadMember(squadId api.SquadId, squadMember api.SquadMember) {
+	var newSquadMemberId api.SquadMemberId
 	tester.PostSquadMember(squadId, squadMember).
 		CheckStatus(http.StatusAccepted).
 		LoadJson(&newSquadMemberId)
