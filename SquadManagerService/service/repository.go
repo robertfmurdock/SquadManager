@@ -13,7 +13,7 @@ type SquadRepositoryFactory struct {
 	parentSession *mgo.Session
 }
 
-func (factory SquadRepositoryFactory) Close() {
+func (factory *SquadRepositoryFactory) Close() {
 	if factory.parentSession != nil {
 		factory.parentSession.Close()
 	}

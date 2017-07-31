@@ -6,7 +6,13 @@ import (
 )
 
 func main() {
-	handler := service.MakeMainHandler(service.Configuration{})
+	handler := service.MakeMainHandler(service.Configuration{
+		Host:         "localhost",
+		DatabaseName: "SquadManager",
+		DbTimeout:    1000,
+	})
+
+	defer handler.Close()
 
 	classic := negroni.Classic()
 	classic.UseHandler(handler)

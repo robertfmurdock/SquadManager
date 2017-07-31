@@ -8,6 +8,8 @@ import (
 
 	"net/url"
 
+	"os"
+
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/service"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/testutil"
@@ -21,8 +23,15 @@ var (
 		Host:         "localhost",
 		DbTimeout:    time.Second / 100,
 	}
-	mainHandler = service.MakeMainHandler(config)
+	mainHandler *service.MainHandler
 )
+
+func TestMain(m *testing.M) {
+	mainHandler = service.MakeMainHandler(config)
+	retCode := m.Run()
+	mainHandler.Close()
+	os.Exit(retCode)
+}
 
 func TestNoResponseOnMainUrl(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
@@ -80,6 +89,14 @@ func TestGETSquadWithInvalidSquadIdWillReturn404(t *testing.T) {
 
 	tester.GetSquad(squadId, nil, nil).
 		CheckStatus(http.StatusNotFound)
+}
+
+func TestPOSTInvalidSquadMemberWillError(t *testing.T) {
+	tester := testutil.New(t, mainHandler)
+	squadId := tester.PerformPostSquad()
+
+	tester.DoRequest("POST", "/squad/"+squadId, "Not a valid member").
+		CheckStatus(http.StatusBadRequest)
 }
 
 func TestPOSTSquadMembersWillShowSquadMembersInSubsequentGETSquad(t *testing.T) {

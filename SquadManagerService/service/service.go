@@ -15,13 +15,24 @@ type Configuration struct {
 	DbTimeout    time.Duration
 }
 
-func MakeMainHandler(config Configuration) http.Handler {
+type MainHandler struct {
+	context *Context
+	router  *httprouter.Router
+}
 
+func (mainHandler *MainHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	LogRequest(mainHandler.router.ServeHTTP)(writer, request)
+}
+
+func (mainHandler *MainHandler) Close() {
+	mainHandler.context.Close()
+}
+
+func MakeMainHandler(config Configuration) *MainHandler {
 	context, err := newContext(config)
 	if err != nil {
 		panic(err)
 	}
-	defer context.Close()
 
 	router := httprouter.New()
 
@@ -30,7 +41,7 @@ func MakeMainHandler(config Configuration) http.Handler {
 	router.GET("/squad/:id", context.with(SquadHandler(getSquad)))
 	router.POST("/squad/:id", context.with(SquadHandler(postSquadMember)))
 
-	return LogRequest(router.ServeHTTP)
+	return &MainHandler{context, router}
 }
 
 type loggingResponseWriter struct {

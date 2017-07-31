@@ -16,6 +16,7 @@ func TestRepositoryFactoryWillCopySession(t *testing.T) {
 			DbTimeout:    time.Second / 100,
 		}, parentSession: nil,
 	}
+	defer factory.Close()
 
 	repository1, err1 := factory.Repository()
 	repository2, err2 := factory.Repository()
@@ -31,6 +32,7 @@ func TestRepositoryFactoryWillCopySession(t *testing.T) {
 	defer repository1.Close()
 	defer repository2.Close()
 
+	assert.NotNil(t, factory.parentSession)
 	assert.False(t, repository1.session == factory.parentSession)
 	assert.False(t, repository1.session == repository2.session)
 }

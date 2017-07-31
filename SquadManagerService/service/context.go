@@ -24,6 +24,6 @@ func (context *Context) with(contextual ContextualHandler) httprouter.Handle {
 	return contextual.With(context)
 }
 
-func (context Context) Close() {
+func (context *Context) Close() {
 	context.RepositoryFactory.Close()
 }

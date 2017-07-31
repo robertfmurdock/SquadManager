@@ -59,7 +59,7 @@ func postSquadMember(request *http.Request, repository *SquadRepository, squadId
 	var squadMember api.SquadMember
 
 	if err := json.NewDecoder(request.Body).Decode(&squadMember); err != nil {
-		return ResponseEntity{}, err
+		return ResponseEntity{err, http.StatusBadRequest}, nil
 	}
 
 	if squad, err := repository.getSquad(squadId, nil, nil); err != nil || squad == nil {
