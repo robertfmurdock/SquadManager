@@ -82,8 +82,7 @@ func ParseDate(date string) (*time.Time, error) {
 }
 
 func Date(year int, month time.Month, day int) *time.Time {
-	location := time.Now().Location()
-	date := time.Date(year, month, day, 0, 0, 0, 0, location)
+	date := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
 	return &date
 }
 
