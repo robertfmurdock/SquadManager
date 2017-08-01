@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"fmt"
-
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/service"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/testutil"
