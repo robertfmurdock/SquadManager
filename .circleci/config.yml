@@ -6,6 +6,15 @@ jobs:
       - image: mongo:3.4
     steps:
       - checkout
+      - restore_cache:
+          key: squadmanager-gradle4-{{ .Branch }}
+      - type: shell
+        command: ./gradlew vendor
+      - save_cache:
+          key: squadmanager-gradle4-{{ .Branch }}
+          paths:
+            - ~/.gradle
+            - .gogradle/project_gopath
       - run:
           name: Run unit tests
           command: ./gradlew test
