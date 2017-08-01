@@ -46,6 +46,10 @@ func (tester *Tester) GetSquadList(begin *time.Time, end *time.Time) Response {
 	return tester.DoRequest("GET", squadUrl.String(), nil)
 }
 
+func (tester *Tester) PutSquadList(squadList []api.Squad) Response {
+	return tester.DoRequest("PUT", "/squad", squadList)
+}
+
 func (tester *Tester) GetSquad(squadId api.SquadId, begin *time.Time, end *time.Time) Response {
 	values := valuesWithDateRange(begin, end)
 	return tester.GetSquadWithParameters(squadId, values)
@@ -104,6 +108,14 @@ func (tester *Tester) PerformGetSquad(squadId api.SquadId, begin *time.Time, end
 func (tester *Tester) PerformGetSquadList(begin *time.Time, end *time.Time) []api.Squad {
 	var loadedJson []api.Squad
 	tester.GetSquadList(begin, end).
+		CheckStatus(http.StatusOK).
+		LoadJson(&loadedJson)
+	return loadedJson
+}
+
+func (tester *Tester) PerformPutSquadList(squadList []api.Squad) []api.Squad {
+	var loadedJson []api.Squad
+	tester.PutSquadList(squadList).
 		CheckStatus(http.StatusOK).
 		LoadJson(&loadedJson)
 	return loadedJson

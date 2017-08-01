@@ -63,6 +63,19 @@ func (repository SquadRepository) addSquad() (api.SquadId, error) {
 	return id, collection.Insert(SquadDocument{bson.ObjectId(id)})
 }
 
+func (repository SquadRepository) overwriteSquadList() ([]api.Squad, error) {
+	if err := repository.SquadCollection().DropCollection(); err != nil {
+		return nil, err
+	}
+
+	if err := repository.SquadMemberCollection().DropCollection(); err != nil {
+		return nil, err
+	}
+
+	results := []api.Squad{}
+	return results, nil
+}
+
 func (repository *SquadRepository) getSquad(idString string, begin *time.Time, end *time.Time) (*api.Squad, error) {
 	if !bson.IsObjectIdHex(idString) {
 		return nil, nil
@@ -157,7 +170,7 @@ func (repository SquadRepository) listSquads(begin *time.Time, end *time.Time) (
 	var allSquadMemberDocuments []SquadMemberDocument
 	repository.loadSquadMemberDocuments(bson.M{}, &allSquadMemberDocuments)
 
-	var squadList []api.Squad
+	squadList := []api.Squad{}
 	for _, document := range squadDocuments {
 		squadId := api.SquadId(document.ID)
 		relatedSquadMemberDocuments := filterBySquadId(squadId, allSquadMemberDocuments)

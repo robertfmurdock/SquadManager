@@ -27,7 +27,6 @@ func TestMain(m *testing.M) {
 	mainHandler = service.MakeMainHandler(config)
 	retCode := m.Run()
 	mainHandler.Close()
-
 	os.Exit(retCode)
 }
 
@@ -59,6 +58,18 @@ func TestPOSTSquadWillIncludeNewSquadInSubsequentGET(t *testing.T) {
 	squadList := tester.PerformGetSquadList(nil, nil)
 
 	assert.Contains(t, squadList, api.Squad{ID: newSquadId, Members: []api.SquadMember{}})
+}
+
+func TestPUTSquadListWillOverwriteAllSquads(t *testing.T) {
+	tester := testutil.New(t, mainHandler)
+
+	tester.PerformPostSquad()
+	squadList := []api.Squad{}
+	returnedSquadList := tester.PerformPutSquadList(squadList)
+	assert.Equal(t, squadList, returnedSquadList)
+
+	updatedSquadList := tester.PerformGetSquadList(nil, nil)
+	assert.Equal(t, squadList, updatedSquadList)
 }
 
 func TestGETSquadWithNewSquadWillHaveNoMembers(t *testing.T) {

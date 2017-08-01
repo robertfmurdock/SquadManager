@@ -37,6 +37,7 @@ func MakeMainHandler(config Configuration) *MainHandler {
 	router := httprouter.New()
 
 	router.GET("/squad", context.with(Handler(listSquads)))
+	router.PUT("/squad", context.with(NoInputHandler(overwriteSquadList)))
 	router.POST("/squad", context.with(NoInputHandler(createSquad)))
 	router.GET("/squad/:id", context.with(SquadHandler(getSquad)))
 	router.POST("/squad/:id", context.with(SquadHandler(postSquadMember)))

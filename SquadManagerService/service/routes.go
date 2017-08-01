@@ -16,6 +16,11 @@ func listSquads(request *http.Request, _ httprouter.Params, repository *SquadRep
 	return ResponseEntity{squads, http.StatusOK}, err
 }
 
+func overwriteSquadList(repository *SquadRepository) (ResponseEntity, error) {
+	squads, err := repository.overwriteSquadList()
+	return ResponseEntity{squads, http.StatusOK}, err
+}
+
 func createSquad(repository *SquadRepository) (ResponseEntity, error) {
 	squad, err := repository.addSquad()
 	return ResponseEntity{squad, http.StatusAccepted}, err
