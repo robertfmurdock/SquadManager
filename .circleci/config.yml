@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: circleci/openjdk:8-jdk
-      - image: mongo:3.5
+      - image: mongo:3.4
     steps:
       - checkout
       - run:
