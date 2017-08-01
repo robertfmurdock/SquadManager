@@ -34,7 +34,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestNoResponseOnMainUrl(t *testing.T) {
-	fmt.Printf("%s", os.Environ())
 	tester := testutil.New(t, mainHandler)
 
 	tester.DoRequest("GET", "/", nil).
