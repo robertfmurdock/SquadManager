@@ -1,1 +1,3 @@
 rootProject.name = 'SquadManager'
+
+include 'SquadManagerService'

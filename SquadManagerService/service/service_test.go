@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
+
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/service"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/testutil"
@@ -27,10 +29,12 @@ func TestMain(m *testing.M) {
 	mainHandler = service.MakeMainHandler(config)
 	retCode := m.Run()
 	mainHandler.Close()
+
 	os.Exit(retCode)
 }
 
 func TestNoResponseOnMainUrl(t *testing.T) {
+	fmt.Printf("%s", os.Environ())
 	tester := testutil.New(t, mainHandler)
 
 	tester.DoRequest("GET", "/", nil).
