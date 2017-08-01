@@ -62,7 +62,7 @@ func (tester *Tester) GetSquadWithParameters(squadId api.SquadId, values *url.Va
 	squadUrl := tester.urlWithValues("/squad/"+squadId.String(), values)
 	return tester.DoRequest("GET", squadUrl.String(), nil)
 }
-func (tester *Tester) urlWithValues(urlString string, values *url.Values) (*url.URL) {
+func (tester *Tester) urlWithValues(urlString string, values *url.Values) *url.URL {
 	squadUrl, err := url.Parse(urlString)
 	if err != nil {
 		tester.t.Fatal(err)

@@ -57,7 +57,6 @@ func parseSquadParameters(request *http.Request) (SquadParameters, error) {
 
 func postSquadMember(request *http.Request, repository *SquadRepository, squadId string) (ResponseEntity, error) {
 	var squadMember api.SquadMember
-
 	if err := json.NewDecoder(request.Body).Decode(&squadMember); err != nil {
 		return ResponseEntity{err, http.StatusBadRequest}, nil
 	}

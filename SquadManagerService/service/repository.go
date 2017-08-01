@@ -90,7 +90,6 @@ func (repository *SquadRepository) loadSquad(squadId api.SquadId, begin *time.Ti
 	if err := repository.loadSquadMemberDocuments(query, &squadMemberDocuments); err != nil {
 		return nil, err
 	}
-
 	return buildSquad(squadId, squadMemberDocuments, begin, end), nil
 }
 
@@ -116,8 +115,11 @@ func toApiSquadMemberList(documents []SquadMemberDocument) []api.SquadMember {
 
 func toApiSquadMember(document SquadMemberDocument) api.SquadMember {
 	return api.SquadMember{
-		ID:    api.SquadMemberId(document.ID),
-		Range: document.Range,
+		ID: api.SquadMemberId(document.ID),
+		Range: api.Range{
+			Begin: document.Range.Begin.UTC(),
+			End:   document.Range.End.UTC(),
+		},
 		Email: document.Email,
 	}
 }
