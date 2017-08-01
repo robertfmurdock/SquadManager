@@ -7,14 +7,14 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: squadmanager-gradle4-{{ .Branch }}-{{ checksum "build.gradle" }}
+          key: squadmanager-gradle4-{{ .Branch }}-{{ checksum "SquadManagerService/build.gradle" }}
       - type: shell
         command: ./gradlew vendor
       - save_cache:
-          key: squadmanager-gradle4-{{ .Branch }}-{{ checksum "build.gradle" }}
+          key: squadmanager-gradle4-{{ .Branch }}-{{ checksum "SquadManagerService/build.gradle" }}
           paths:
             - ~/.gradle
-            - vendor
+            - SquadManagerService/vendor
       - run:
           name: Run unit tests
           command: ./gradlew test
