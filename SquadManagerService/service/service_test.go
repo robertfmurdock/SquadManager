@@ -1,14 +1,11 @@
 package service_test
 
 import (
+	"net/http"
+	"net/url"
+	"os"
 	"testing"
 	"time"
-
-	"net/http"
-
-	"net/url"
-
-	"os"
 
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/api"
 	"github.com/robertfmurdock/SquadManager/SquadManagerService/service"
@@ -47,6 +44,7 @@ func TestWillErrorWhenDatasourceNotAvailable(t *testing.T) {
 		DbTimeout:    time.Millisecond / 100,
 	}
 	handler := service.MakeMainHandler(config)
+	defer handler.Close()
 	tester := testutil.New(t, handler)
 
 	tester.GetSquadList(nil, nil).
