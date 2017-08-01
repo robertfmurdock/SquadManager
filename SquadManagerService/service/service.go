@@ -60,6 +60,6 @@ func LogRequest(next http.HandlerFunc) http.HandlerFunc {
 		loggingWriter := &loggingResponseWriter{ResponseWriter: writer, statusCode: http.StatusOK}
 		next(loggingWriter, request)
 		duration := time.Now().Sub(start)
-		log.Println(loggingWriter.statusCode, duration, request.URL.String())
+		log.Println(loggingWriter.statusCode, duration, request.Method, request.URL.String())
 	}
 }
