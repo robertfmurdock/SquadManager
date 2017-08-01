@@ -14,7 +14,7 @@ jobs:
           key: squadmanager-gradle4-{{ .Branch }}
           paths:
             - ~/.gradle
-            - .gogradle/project_gopath
+            - vendor
       - run:
           name: Run unit tests
           command: ./gradlew test
