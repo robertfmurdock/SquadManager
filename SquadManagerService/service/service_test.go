@@ -18,7 +18,7 @@ var (
 	config = service.Configuration{
 		DatabaseName: "SquadManagerTestDB",
 		Host:         "localhost",
-		DbTimeout:    time.Second / 100,
+		DbTimeout:    time.Second,
 	}
 	mainHandler *service.MainHandler
 )
