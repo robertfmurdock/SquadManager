@@ -19,6 +19,6 @@ jobs:
           name: Run unit tests
           command: ./gradlew test
       - store_artifacts:
-          path: .gogradle/reports/test
+          path: SquadManagerService/.gogradle/reports/test
       - store_test_results:
-          path: .gogradle/reports/test
+          path: SquadManagerService/.gogradle/reports/test
