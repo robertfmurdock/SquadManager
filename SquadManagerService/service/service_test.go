@@ -60,13 +60,25 @@ func TestPOSTSquadWillIncludeNewSquadInSubsequentGET(t *testing.T) {
 	assert.Contains(t, squadList, api.Squad{ID: newSquadId, Members: []api.SquadMember{}})
 }
 
-func TestPUTSquadListWillOverwriteAllSquads(t *testing.T) {
+func TestPUTEmptySquadListWillOverwriteAllSquads(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 
 	tester.PerformPostSquad()
 	squadList := []api.Squad{}
 	returnedSquadList := tester.PerformPutSquadList(squadList)
 	assert.Equal(t, squadList, returnedSquadList)
+
+	updatedSquadList := tester.PerformGetSquadList(nil, nil)
+	assert.Equal(t, squadList, updatedSquadList)
+}
+
+func TestPUTEmptySquadListTwiceIsSafe(t *testing.T) {
+	tester := testutil.New(t, mainHandler)
+
+	tester.PerformPostSquad()
+	squadList := []api.Squad{}
+	assert.Equal(t, squadList, tester.PerformPutSquadList(squadList))
+	assert.Equal(t, squadList, tester.PerformPutSquadList(squadList))
 
 	updatedSquadList := tester.PerformGetSquadList(nil, nil)
 	assert.Equal(t, squadList, updatedSquadList)

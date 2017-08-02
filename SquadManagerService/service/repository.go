@@ -64,12 +64,26 @@ func (repository SquadRepository) addSquad() (api.SquadId, error) {
 }
 
 func (repository SquadRepository) overwriteSquadList() ([]api.Squad, error) {
-	if err := repository.SquadCollection().DropCollection(); err != nil {
+
+	squadCount, err := repository.SquadCollection().Count()
+	if err != nil {
 		return nil, err
 	}
 
-	if err := repository.SquadMemberCollection().DropCollection(); err != nil {
+	if squadCount > 0 {
+		if err := repository.SquadCollection().DropCollection(); err != nil {
+			return nil, err
+		}
+	}
+	memberCount, err := repository.SquadMemberCollection().Count()
+	if err != nil {
 		return nil, err
+	}
+
+	if memberCount > 0 {
+		if err := repository.SquadMemberCollection().DropCollection(); err != nil {
+			return nil, err
+		}
 	}
 
 	results := []api.Squad{}
