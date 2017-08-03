@@ -84,6 +84,22 @@ func TestPUTEmptySquadListTwiceIsSafe(t *testing.T) {
 	assert.Equal(t, squadList, updatedSquadList)
 }
 
+func TestPUTNewSquadListWillOverwriteAllSquads(t *testing.T) {
+	tester := testutil.New(t, mainHandler)
+
+	tester.PerformPostSquad()
+	squadList := []api.Squad{
+		{ID: api.SquadId(bson.NewObjectId()), Members: []api.SquadMember{}},
+		{ID: api.SquadId(bson.NewObjectId()), Members: []api.SquadMember{}},
+		{ID: api.SquadId(bson.NewObjectId()), Members: []api.SquadMember{}},
+	}
+	returnedSquadList := tester.PerformPutSquadList(squadList)
+	assert.Equal(t, squadList, returnedSquadList)
+
+	updatedSquadList := tester.PerformGetSquadList(nil, nil)
+	assert.Equal(t, squadList, updatedSquadList)
+}
+
 func TestGETSquadWithNewSquadWillHaveNoMembers(t *testing.T) {
 	tester := testutil.New(t, mainHandler)
 	newSquadId := tester.PerformPostSquad()

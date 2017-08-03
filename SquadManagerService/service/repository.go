@@ -63,31 +63,64 @@ func (repository SquadRepository) addSquad() (api.SquadId, error) {
 	return id, collection.Insert(SquadDocument{bson.ObjectId(id)})
 }
 
-func (repository SquadRepository) overwriteSquadList() ([]api.Squad, error) {
+func (repository SquadRepository) overwriteSquadList(squadList []api.Squad) ([]api.Squad, error) {
 
-	squadCount, err := repository.SquadCollection().Count()
-	if err != nil {
+	if err := clearCollection(repository.SquadCollection()); err != nil {
+		return nil, err
+	}
+	if err := clearCollection(repository.SquadMemberCollection()); err != nil {
 		return nil, err
 	}
 
-	if squadCount > 0 {
-		if err := repository.SquadCollection().DropCollection(); err != nil {
-			return nil, err
-		}
-	}
-	memberCount, err := repository.SquadMemberCollection().Count()
-	if err != nil {
+	squadDocumentList, squadMemberDocumentList := toDocuments(squadList)
+
+	if err := insertDocuments(repository.SquadCollection(), squadDocumentList); err != nil {
 		return nil, err
 	}
 
-	if memberCount > 0 {
-		if err := repository.SquadMemberCollection().DropCollection(); err != nil {
-			return nil, err
-		}
+	if err := insertDocuments(repository.SquadMemberCollection(), squadMemberDocumentList); err != nil {
+		return nil, err
 	}
 
-	results := []api.Squad{}
-	return results, nil
+	return squadList, nil
+}
+
+func toDocuments(squadList []api.Squad) ([]interface{}, []interface{}) {
+	squadDocumentList := make([]interface{}, len(squadList))
+	var squadMemberDocumentList []interface{}
+	for index, squad := range squadList {
+		squadDocumentList[index] = SquadDocument{ID: bson.ObjectId(squad.ID)}
+
+		for _, member := range squad.Members {
+			squadMemberDocumentList = append(squadMemberDocumentList, toSquadMemberDocument(member, squad.ID))
+		}
+	}
+	return squadDocumentList, squadMemberDocumentList
+}
+
+func clearCollection(collection *mgo.Collection) error {
+	count, err := collection.Count()
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return nil
+	}
+
+	return collection.DropCollection()
+}
+
+func insertDocuments(collection *mgo.Collection, documentList []interface{}) error {
+	if len(documentList) == 0 {
+		return nil
+	}
+
+	if err := collection.Insert(documentList...); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (repository *SquadRepository) getSquad(idString string, begin *time.Time, end *time.Time) (*api.Squad, error) {

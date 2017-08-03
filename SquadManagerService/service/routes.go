@@ -16,8 +16,13 @@ func listSquads(request *http.Request, _ httprouter.Params, repository *SquadRep
 	return ResponseEntity{squads, http.StatusOK}, err
 }
 
-func overwriteSquadList(repository *SquadRepository) (ResponseEntity, error) {
-	squads, err := repository.overwriteSquadList()
+func overwriteSquadList(request *http.Request, _ httprouter.Params, repository *SquadRepository) (ResponseEntity, error) {
+	squadList := []api.Squad{}
+	if err := json.NewDecoder(request.Body).Decode(&squadList); err != nil {
+		return ResponseEntity{err, http.StatusBadRequest}, nil
+	}
+
+	squads, err := repository.overwriteSquadList(squadList)
 	return ResponseEntity{squads, http.StatusOK}, err
 }
 
